@@ -24,6 +24,7 @@ RHEL-family systems differ from Ubuntu in four critical areas that must be addre
 | `scripts/upgrade-server.sh` | Upgrades a server node one step at a time (includes RHEL checks) |
 | `scripts/upgrade-agent.sh` | Upgrades an agent node with cordon/drain gate |
 | `scripts/post-upgrade-cleanup.sh` | Removes old data dirs, verifies SELinux labels, checks AVC denials |
+| `scripts/switch-cni-to-calico.sh` | Switches CNI from Canal to Calico (includes SELinux relabel + AVC check) |
 
 ## Quick start
 
@@ -57,6 +58,9 @@ sudo bash RHEL/scripts/upgrade-agent.sh v1.32.13+rke2r1 /root/rke2-upgrade
 
 # 8. Post-upgrade cleanup
 sudo bash RHEL/scripts/post-upgrade-cleanup.sh
+
+# 9. (Optional) Switch CNI from Canal to Calico
+sudo bash RHEL/scripts/switch-cni-to-calico.sh
 ```
 
 ## Supported distributions

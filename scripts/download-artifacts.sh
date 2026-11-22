@@ -10,7 +10,9 @@ set -euo pipefail
 
 OUTPUT_DIR="${1:-./rke2-airgap-artifacts}"
 
-# Upgrade path: all intermediate versions + final target
+# Upgrade path: all intermediate versions + final target.
+# Calico images are bundled in the RKE2 tarball (rke2.linux-amd64.tar.gz) for
+# v1.30+, so no separate calico image download is needed for the CNI switch.
 RKE2_VERSIONS=(
   "v1.28.9+rke2r1"
   "v1.29.9+rke2r1"

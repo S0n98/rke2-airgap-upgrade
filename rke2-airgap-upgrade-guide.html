@@ -420,6 +420,7 @@ pre code {
   <div class="nav-section-label">Post-Upgrade</div>
   <a href="#custom-images" class="nav-link">Custom Images</a>
   <a href="#disk-cleanup" class="nav-link">Disk Cleanup</a>
+  <a href="#cni-switch" class="nav-link">Switch CNI to Calico</a>
   <a href="#rollback" class="nav-link">Rollback</a>
   <a href="#troubleshooting" class="nav-link">Troubleshooting</a>
 
@@ -944,9 +945,74 @@ done</code></pre>
     </div>
   </section>
 
+  <!-- CNI Switch -->
+  <section class="section" id="cni-switch">
+    <h2><span class="section-num">13</span>Switch CNI from Canal to Calico (Optional)</h2>
+    <p>RKE2 defaults to <strong>Canal CNI</strong> — Flannel (VXLAN overlay, UDP 4789) + Calico (NetworkPolicy engine). To run <strong>pure Calico CNI</strong>, where Calico handles both the VXLAN overlay and policy, perform this switch <em>after</em> the full Kubernetes upgrade is verified healthy. Do not combine a CNI switch with a k8s version bump.</p>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ</span>
+      <div class="callout-body">
+        <strong>No extra downloads needed in airgap</strong>
+        Calico images (<code>rancher/hardened-calico:v3.31.3+</code>) are bundled inside the RKE2 airgap tarballs from v1.30 onward. After completing the upgrade to v1.32, they are already imported into containerd.
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠</span>
+      <div class="callout-body">
+        <strong>~2 minutes of pod networking interruption</strong>
+        Canal (Flannel) is uninstalled and Calico takes over. All pods temporarily lose connectivity. The <code>flannel.1</code> interface is replaced by <code>vxlan.calico</code>. Plan a maintenance window.
+      </div>
+    </div>
+
+    <h3>Automated switch</h3>
+<pre><code>sudo bash scripts/switch-cni-to-calico.sh</code></pre>
+    <p>The script: writes <code>cni: calico</code> to <code>/etc/rancher/rke2/config.yaml</code>, restarts <code>rke2-server</code>, waits for the Calico DaemonSet to become Ready, verifies <code>vxlan.calico</code> is up, then restarts all application Deployments and StatefulSets.</p>
+
+    <h3>Manual steps</h3>
+<pre><code># 1. Configure
+echo "cni: calico" >> /etc/rancher/rke2/config.yaml
+
+# 2. Restart (Canal removed, Calico deployed)
+systemctl restart rke2-server
+
+# 3. Verify Calico is running
+kubectl get pods -n kube-system | grep calico
+ip link show vxlan.calico      # Calico VXLAN interface
+ip link show flannel.1         # should disappear
+
+# 4. Restart pods to pick up new CNI-managed interfaces
+kubectl rollout restart deployment -A
+kubectl rollout restart statefulset -A
+
+# 5. Confirm all pods recover
+kubectl get pods -A</code></pre>
+
+    <h3>What changes with pure Calico</h3>
+    <table class="data-table">
+      <thead><tr><th>Item</th><th>Canal (before)</th><th>Calico (after)</th></tr></thead>
+      <tbody>
+        <tr><td>Overlay interface</td><td><code>flannel.1</code></td><td><code>vxlan.calico</code></td></tr>
+        <tr><td>VXLAN port</td><td>UDP 8472 (Flannel default)</td><td>UDP 4789 (IANA standard)</td></tr>
+        <tr><td>Pod interfaces</td><td><code>cali*</code> (via Canal-Calico)</td><td><code>cali*</code> (same)</td></tr>
+        <tr><td>NetworkPolicy</td><td>Calico plugin within Canal</td><td>Native Calico</td></tr>
+        <tr><td>RKE2 config</td><td><code>cni: canal</code> (implicit default)</td><td><code>cni: calico</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ</span>
+      <div class="callout-body">
+        <strong>Flannel used UDP 8472; Calico uses UDP 4789</strong>
+        If you have a firewall or security group, update VXLAN rules from UDP 8472 to UDP 4789 on all node-to-node paths after the switch.
+      </div>
+    </div>
+  </section>
+
   <!-- Rollback -->
   <section class="section" id="rollback">
-    <h2><span class="section-num">13</span>Rollback Procedure</h2>
+    <h2><span class="section-num">14</span>Rollback Procedure</h2>
     <p>Kubernetes does not support in-place downgrades. The only supported rollback is to restore etcd from a snapshot taken at the previous version, then re-install the previous RKE2 binary.</p>
 
     <div class="callout crit">
@@ -981,7 +1047,7 @@ kubectl get nodes</code></pre>
 
   <!-- Troubleshooting -->
   <section class="section" id="troubleshooting">
-    <h2><span class="section-num">14</span>Troubleshooting</h2>
+    <h2><span class="section-num">15</span>Troubleshooting</h2>
 
     <h3>Service fails to start after restart</h3>
 <pre><code>journalctl -u rke2-server --since "5 minutes ago" --no-pager \
@@ -1023,7 +1089,7 @@ kubectl rollout status deployment/&lt;name&gt; -n &lt;namespace&gt;</code></pre>
 
   <!-- Full Checklist -->
   <section class="section" id="checklist">
-    <h2><span class="section-num">15</span>Full Upgrade Checklist</h2>
+    <h2><span class="section-num">16</span>Full Upgrade Checklist</h2>
     <p>Use this checklist for each upgrade run. Print or copy it to your runbook.</p>
 
     <h3>Before starting</h3>
@@ -1062,7 +1128,7 @@ kubectl rollout status deployment/&lt;name&gt; -n &lt;namespace&gt;</code></pre>
 
   <!-- Artifact List -->
   <section class="section" id="artifact-list">
-    <h2><span class="section-num">16</span>Artifact List</h2>
+    <h2><span class="section-num">17</span>Artifact List</h2>
     <p>Complete list of files to download for a full 1.27 → 1.32 upgrade in an airgap environment.</p>
 
     <table class="data-table">

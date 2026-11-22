@@ -255,6 +255,7 @@ pre code .rhel { color: var(--accent-hi); }
   <div class="nav-section-label">Post-Upgrade</div>
   <a href="#custom-images" class="nav-link">Custom Images</a>
   <a href="#disk-cleanup" class="nav-link">Disk Cleanup</a>
+  <a href="#cni-switch" class="nav-link">Switch CNI to Calico <span class="diff-badge">RHEL</span></a>
   <a href="#rollback" class="nav-link">Rollback</a>
   <a href="#troubleshooting" class="nav-link">Troubleshooting</a>
 
@@ -772,9 +773,47 @@ done
 df -h /</code></pre>
   </section>
 
+  <!-- CNI Switch -->
+  <section class="section" id="cni-switch">
+    <h2><span class="sn">16</span>Switch CNI from Canal to Calico <span class="diff-badge">RHEL</span></h2>
+    <p>After the full Kubernetes upgrade is complete and healthy, you can switch from the default Canal CNI to pure Calico. The RHEL-specific script adds SELinux relabeling and an AVC denial check after the switch.</p>
+
+    <div class="diff-callout">
+      <strong>RHEL difference: SELinux relabeling required after CNI switch</strong>
+      When RKE2 deploys the new Calico binaries, their files must be relabeled with the correct SELinux context. The script runs <code>restorecon -Rv /var/lib/rancher/rke2/</code> automatically. It also verifies that UDP 4789 (Calico VXLAN, IANA standard) is open in firewalld — Flannel used the non-standard UDP 8472 port, Calico uses 4789.
+    </div>
+
+    <pre><code>sudo bash RHEL/scripts/switch-cni-to-calico.sh</code></pre>
+
+    <h3>Manual firewalld update</h3>
+    <p>After the switch, Flannel's UDP 8472 is no longer needed. Update firewalld:</p>
+<pre><code># Add Calico VXLAN port (if not already added by the script)
+firewall-cmd --add-port=4789/udp --permanent
+
+# Optionally remove the old Flannel port
+firewall-cmd --remove-port=8472/udp --permanent
+
+firewall-cmd --reload
+firewall-cmd --list-ports | grep -E "4789|8472"</code></pre>
+
+    <h3>Post-switch SELinux check</h3>
+<pre><code># Check for AVC denials after the CNI switch
+ausearch -m AVC -ts today 2>/dev/null | grep -E "calico|cali"
+
+# If denials appear, relabel and restart
+restorecon -Rv /var/lib/rancher/rke2/
+systemctl restart rke2-server</code></pre>
+
+    <div class="callout callout-info" style="display:flex;gap:10px;padding:12px 14px;border-radius:6px;border:1px solid;background:color-mix(in srgb, var(--blue,#60a5fa) 7%, var(--bg,#0b0f14));border-color:color-mix(in srgb, var(--blue,#60a5fa) 25%, var(--border,#1f2d3d));font-size:13px;line-height:1.55;">
+      <span style="flex-shrink:0;font-size:15px;">ℹ</span>
+      <div><strong style="display:block;margin-bottom:2px;">Calico images are bundled in the RKE2 tarball (v1.30+)</strong>
+      No additional airgap downloads are needed. After installing the v1.32 tarball, Calico images are already in containerd.</div>
+    </div>
+  </section>
+
   <!-- Rollback -->
   <section class="section" id="rollback">
-    <h2><span class="sn">16</span>Rollback</h2>
+    <h2><span class="sn">18</span>Rollback</h2>
     <p>Rollback procedure is identical to Ubuntu: stop the service, re-install the previous binary, restore etcd from snapshot. No RHEL-specific steps are needed beyond ensuring the SELinux policy version matches the binary version being restored.</p>
 
 <pre><code>systemctl stop rke2-server
@@ -794,7 +833,7 @@ systemctl start rke2-server</code></pre>
 
   <!-- Troubleshooting -->
   <section class="section" id="troubleshooting">
-    <h2><span class="sn">17</span>Troubleshooting (RHEL-specific)</h2>
+    <h2><span class="sn">19</span>Troubleshooting (RHEL-specific)</h2>
 
     <h3>Pods stuck in ContainerCreating — SELinux AVC denial</h3>
 <pre><code># Check for AVC denials
@@ -851,7 +890,7 @@ kubectl describe node | grep Taint</code></pre>
 
   <!-- Scripts -->
   <section class="section" id="scripts">
-    <h2><span class="sn">18</span>Script Reference</h2>
+    <h2><span class="sn">20</span>Script Reference</h2>
     <p>All scripts are in the <code>RHEL/scripts/</code> directory. They wrap the procedures in this guide with RHEL-aware checks (SELinux, firewalld, NetworkManager).</p>
 
     <table class="data-table">
@@ -911,7 +950,7 @@ bash RHEL/scripts/post-upgrade-cleanup.sh</code></pre>
 
   <!-- Checklist -->
   <section class="section" id="checklist">
-    <h2><span class="sn">19</span>Full Checklist</h2>
+    <h2><span class="sn">21</span>Full Checklist</h2>
 
     <h3>One-time RHEL node preparation (all nodes)</h3>
     <ul class="check-list">
@@ -955,7 +994,7 @@ bash RHEL/scripts/post-upgrade-cleanup.sh</code></pre>
 
   <!-- Port Reference -->
   <section class="section" id="ports">
-    <h2><span class="sn">20</span>Port Reference</h2>
+    <h2><span class="sn">22</span>Port Reference</h2>
 
     <table class="data-table">
       <thead><tr><th>Port</th><th>Protocol</th><th>Direction</th><th>Purpose</th></tr></thead>
