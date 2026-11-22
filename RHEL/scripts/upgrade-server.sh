@@ -150,7 +150,7 @@ kubectl get nodes 2>/dev/null || echo "(wait a few seconds and retry kubectl get
 
 echo ""
 echo "Waiting for system pods..."
-kubectl rollout status -n kube-system daemonset/rke2-canal --timeout=120s 2>/dev/null || true
+kubectl rollout status -n kube-system daemonset/calico-node --timeout=120s 2>/dev/null || true
 kubectl rollout status -n kube-system deployment/rke2-coredns-rke2-coredns --timeout=120s 2>/dev/null || true
 kubectl rollout status -n kube-system deployment/rke2-metrics-server --timeout=60s 2>/dev/null || true
 

@@ -81,7 +81,7 @@ echo "  nm-cloud-setup: disabled"
 echo "[6/8] Configuring NetworkManager to ignore CNI interfaces..."
 cat > /etc/NetworkManager/conf.d/rke2-cni.conf <<'EOF'
 [keyfile]
-unmanaged-devices=interface-name:cni0;interface-name:flannel.1;interface-name:veth*;interface-name:canal*
+unmanaged-devices=interface-name:cni0;interface-name:vxlan.calico;interface-name:veth*;interface-name:cali*
 EOF
 systemctl reload NetworkManager 2>/dev/null || systemctl restart NetworkManager
 echo "  NetworkManager: CNI interfaces set to unmanaged"

@@ -24,9 +24,8 @@ echo "=== Opening RKE2 firewall ports ($ROLE node) ==="
 
 # Ports needed on BOTH server and agent nodes
 common_ports=(
-  "10250/tcp"      # kubelet API
-  "8472/udp"       # Canal VXLAN
-  "51820/udp"      # Canal WireGuard (optional but harmless to open)
+  "10250/tcp"       # kubelet API
+  "4789/udp"        # Calico VXLAN overlay (IANA standard)
   "30000-32767/tcp" # NodePort range
   "30000-32767/udp" # NodePort range
 )
@@ -37,7 +36,7 @@ server_ports=(
   "9345/tcp"   # RKE2 supervisor API (agent registration)
   "2379/tcp"   # etcd client
   "2380/tcp"   # etcd peer
-  "4240/tcp"   # Canal health check
+  "5473/tcp"   # Calico Typha (used in larger clusters; harmless on single-node)
   "10257/tcp"  # kube-controller-manager
   "10259/tcp"  # kube-scheduler
 )

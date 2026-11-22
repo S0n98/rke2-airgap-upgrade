@@ -11,7 +11,7 @@ RHEL-family systems differ from Ubuntu in four critical areas that must be addre
 | **SELinux** | RKE2 requires the `rke2-selinux` policy RPM installed before the binary. Without it, containerd and pods are denied by MAC enforcement. |
 | **firewalld** | RHEL enables firewalld by default. All RKE2 ports must be opened explicitly. |
 | **NetworkManager** | `nm-cloud-setup.service` continuously rewrites routing tables, breaking CNI pod networking. It must be disabled. |
-| **nm CNI isolation** | NetworkManager must be told to ignore virtual CNI interfaces (`cni0`, `flannel.1`, `veth*`). |
+| **nm CNI isolation** | NetworkManager must be told to ignore virtual CNI interfaces (`cni0`, `vxlan.calico`, `cali*`, `veth*`). |
 
 ## Contents
 

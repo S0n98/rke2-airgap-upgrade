@@ -78,7 +78,7 @@ fi
 
 echo ""
 echo "--- kube-system ---"
-check_daemonset   kube-system rke2-canal
+check_daemonset   kube-system calico-node
 check_deployment  kube-system rke2-coredns-rke2-coredns
 check_deployment  kube-system rke2-metrics-server
 check_deployment  kube-system rke2-snapshot-controller

@@ -80,8 +80,8 @@ The script adds `cni: calico` to `/etc/rancher/rke2/config.yaml`, restarts `rke2
 - **Disk space** — ensure ≥ 20 GB free before starting; each step uses ~300 MB
 - **Custom images** — locally-built images may be evicted after a containerd major version upgrade; save them as tar archives and re-import with `ctr images import`
 - **etcd snapshot** — always take a snapshot before each step (`rke2 etcd-snapshot save --name pre-upgrade-$(date +%Y%m%d)`)
-- **CNI switch** — to run pure Calico CNI (instead of Canal), use `scripts/switch-cni-to-calico.sh` *after* the full k8s upgrade; Calico images ship in the RKE2 tarball so no extra airgap download is needed
-- **Starting version** — this runbook was tested from `v1.27.13+rke2r1` (EOL, Canal CNI default); if your starting version differs, verify the upgrade path at [rke2 releases](https://github.com/rancher/rke2/releases)
+- **Calico CNI** — this runbook assumes the cluster was installed with `cni: calico` in `/etc/rancher/rke2/config.yaml`. Calico images are bundled in the RKE2 tarball (v1.30+). If upgrading a Canal-based cluster and want to switch to Calico, use `scripts/switch-cni-to-calico.sh` after the full k8s upgrade
+- **Starting version** — this runbook was tested from `v1.27.13+rke2r1` (EOL, Calico CNI configured); if your starting version differs, verify the upgrade path at [rke2 releases](https://github.com/rancher/rke2/releases)
 
 ## Full guide
 

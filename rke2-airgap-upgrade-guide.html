@@ -420,7 +420,7 @@ pre code {
   <div class="nav-section-label">Post-Upgrade</div>
   <a href="#custom-images" class="nav-link">Custom Images</a>
   <a href="#disk-cleanup" class="nav-link">Disk Cleanup</a>
-  <a href="#cni-switch" class="nav-link">Switch CNI to Calico</a>
+  <a href="#cni-switch" class="nav-link">Canal → Calico Migration</a>
   <a href="#rollback" class="nav-link">Rollback</a>
   <a href="#troubleshooting" class="nav-link">Troubleshooting</a>
 
@@ -549,6 +549,7 @@ pre code {
       <li>etcd snapshot taken within the last hour (see <a href="#backup">section 7</a>)</li>
       <li>All custom container images saved as tar archives and confirmed present</li>
       <li>No active Kubernetes upgrade jobs or pending evictions</li>
+      <li><strong>Calico CNI</strong>: confirm <code>/etc/rancher/rke2/config.yaml</code> contains <code>cni: calico</code> before starting. This must be set at initial RKE2 install time — it cannot be injected mid-upgrade. Verify the Calico node pod is Running: <code>kubectl get ds -n kube-system calico-node</code></li>
     </ul>
 
     <h3>On the download machine</h3>
@@ -741,7 +742,7 @@ systemctl is-active rke2-server &amp;&amp; echo "UP" || echo "FAILED"</code></pr
       <li>
         <div>
           <strong>Wait for system pods to be Ready</strong>
-          <pre><code>kubectl rollout status -n kube-system daemonset/rke2-canal --timeout=120s
+          <pre><code>kubectl rollout status -n kube-system daemonset/calico-node --timeout=120s
 kubectl rollout status -n kube-system deployment/rke2-coredns-rke2-coredns --timeout=120s
 kubectl rollout status -n kube-system deployment/rke2-metrics-server --timeout=120s</code></pre>
         </div>
@@ -947,8 +948,8 @@ done</code></pre>
 
   <!-- CNI Switch -->
   <section class="section" id="cni-switch">
-    <h2><span class="section-num">13</span>Switch CNI from Canal to Calico (Optional)</h2>
-    <p>RKE2 defaults to <strong>Canal CNI</strong> — Flannel (VXLAN overlay, UDP 4789) + Calico (NetworkPolicy engine). To run <strong>pure Calico CNI</strong>, where Calico handles both the VXLAN overlay and policy, perform this switch <em>after</em> the full Kubernetes upgrade is verified healthy. Do not combine a CNI switch with a k8s version bump.</p>
+    <h2><span class="section-num">13</span>Canal → Calico Migration (Appendix)</h2>
+    <p>This section applies only if your cluster was originally set up with <strong>Canal CNI</strong> (RKE2's default: Flannel VXLAN + Calico NetworkPolicy) and you want to migrate to <strong>pure Calico CNI</strong> after the upgrade. <strong>If your cluster was installed with <code>cni: calico</code> from the start, skip this section — Calico is already running.</strong></p>
 
     <div class="callout info">
       <span class="callout-icon">ℹ</span>

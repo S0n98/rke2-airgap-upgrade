@@ -255,7 +255,7 @@ pre code .rhel { color: var(--accent-hi); }
   <div class="nav-section-label">Post-Upgrade</div>
   <a href="#custom-images" class="nav-link">Custom Images</a>
   <a href="#disk-cleanup" class="nav-link">Disk Cleanup</a>
-  <a href="#cni-switch" class="nav-link">Switch CNI to Calico <span class="diff-badge">RHEL</span></a>
+  <a href="#cni-switch" class="nav-link">Canal → Calico Migration</a>
   <a href="#rollback" class="nav-link">Rollback</a>
   <a href="#troubleshooting" class="nav-link">Troubleshooting</a>
 
@@ -452,10 +452,8 @@ firewall-cmd --permanent --add-port=2380/tcp   # etcd peer
 firewall-cmd --permanent --add-port=10250/tcp  # kubelet API
 firewall-cmd --permanent --add-port=10257/tcp  # kube-controller-manager
 firewall-cmd --permanent --add-port=10259/tcp  # kube-scheduler
-firewall-cmd --permanent --add-port=4240/tcp   # Canal health check
-firewall-cmd --permanent --add-port=51820/udp  # Canal WireGuard (optional)
-firewall-cmd --permanent --add-port=8472/udp   # Canal VXLAN (Flannel)
-firewall-cmd --permanent --add-port=179/tcp    # BGP (Calico, if used)
+firewall-cmd --permanent --add-port=4789/udp   # Calico VXLAN overlay (IANA standard)
+firewall-cmd --permanent --add-port=5473/tcp   # Calico Typha (larger clusters)
 
 # NodePort range
 firewall-cmd --permanent --add-port=30000-32767/tcp
@@ -470,8 +468,7 @@ firewall-cmd --list-ports</code></pre>
     <h3>Agent node firewall rules</h3>
 <pre><code># RKE2 agent node — a subset of server rules
 firewall-cmd --permanent --add-port=10250/tcp  # kubelet API
-firewall-cmd --permanent --add-port=8472/udp   # Canal VXLAN
-firewall-cmd --permanent --add-port=51820/udp  # Canal WireGuard (optional)
+firewall-cmd --permanent --add-port=4789/udp   # Calico VXLAN overlay
 firewall-cmd --permanent --add-port=30000-32767/tcp
 firewall-cmd --permanent --add-port=30000-32767/udp
 firewall-cmd --reload</code></pre>
@@ -502,11 +499,11 @@ systemctl is-active nm-cloud-setup.service nm-cloud-setup.timer 2>/dev/null
 # Expected: inactive (or Unit not found — also fine)</code></pre>
 
     <h3>Tell NetworkManager to ignore the CNI interfaces</h3>
-    <p>Without this, NetworkManager will manage the virtual <code>cni0</code>, <code>flannel.1</code>, and <code>veth*</code> interfaces that Canal creates, and may reset them when it detects changes.</p>
+    <p>Without this, NetworkManager will manage the virtual <code>cni0</code>, <code>vxlan.calico</code>, and <code>cali*</code> interfaces that Calico creates, and may reset them when it detects changes.</p>
 
 <pre><code>cat > /etc/NetworkManager/conf.d/rke2-cni.conf &lt;&lt;'EOF'
 [keyfile]
-unmanaged-devices=interface-name:cni0;interface-name:flannel.1;interface-name:veth*;interface-name:canal*
+unmanaged-devices=interface-name:cni0;interface-name:vxlan.calico;interface-name:veth*;interface-name:cali*
 EOF
 
 systemctl reload NetworkManager</code></pre>
@@ -516,7 +513,7 @@ systemctl reload NetworkManager</code></pre>
 nmcli device status
 
 # Confirm RKE2's CNI interfaces are unmanaged
-nmcli device status | grep -E "cni0|flannel|veth"
+nmcli device status | grep -E "cni0|vxlan|cali|veth"
 # Expected output: unmanaged</code></pre>
   </section>
 
@@ -675,7 +672,7 @@ kubectl get nodes</code></pre>
       <li>
         <div>
           <strong>Wait for system pods</strong>
-          <pre><code>kubectl rollout status -n kube-system daemonset/rke2-canal --timeout=120s
+          <pre><code>kubectl rollout status -n kube-system daemonset/calico-node --timeout=120s
 kubectl rollout status -n kube-system deployment/rke2-coredns-rke2-coredns --timeout=120s</code></pre>
         </div>
       </li>
@@ -775,12 +772,12 @@ df -h /</code></pre>
 
   <!-- CNI Switch -->
   <section class="section" id="cni-switch">
-    <h2><span class="sn">16</span>Switch CNI from Canal to Calico <span class="diff-badge">RHEL</span></h2>
-    <p>After the full Kubernetes upgrade is complete and healthy, you can switch from the default Canal CNI to pure Calico. The RHEL-specific script adds SELinux relabeling and an AVC denial check after the switch.</p>
+    <h2><span class="sn">16</span>Canal → Calico Migration (Appendix)</h2>
+    <p>This section applies only if your cluster was originally set up with Canal CNI (RKE2's default) and you want to migrate to pure Calico. <strong>If your cluster was installed with <code>cni: calico</code> from the start, skip this section — Calico is already running.</strong></p>
 
     <div class="diff-callout">
       <strong>RHEL difference: SELinux relabeling required after CNI switch</strong>
-      When RKE2 deploys the new Calico binaries, their files must be relabeled with the correct SELinux context. The script runs <code>restorecon -Rv /var/lib/rancher/rke2/</code> automatically. It also verifies that UDP 4789 (Calico VXLAN, IANA standard) is open in firewalld — Flannel used the non-standard UDP 8472 port, Calico uses 4789.
+      When RKE2 deploys the Calico components, their files must be relabeled. The script runs <code>restorecon -Rv /var/lib/rancher/rke2/</code> automatically. Also note: Canal/Flannel uses UDP 8472, Calico uses UDP 4789 — update firewalld after the switch.
     </div>
 
     <pre><code>sudo bash RHEL/scripts/switch-cni-to-calico.sh</code></pre>
@@ -1006,7 +1003,7 @@ bash RHEL/scripts/post-upgrade-cleanup.sh</code></pre>
         <tr><td>10250</td><td>TCP</td><td>Any → Node</td><td>kubelet API (metrics, exec, logs)</td></tr>
         <tr><td>10257</td><td>TCP</td><td>localhost</td><td>kube-controller-manager</td></tr>
         <tr><td>10259</td><td>TCP</td><td>localhost</td><td>kube-scheduler</td></tr>
-        <tr><td>8472</td><td>UDP</td><td>Node ↔ Node</td><td>Canal VXLAN (Flannel overlay)</td></tr>
+        <tr><td>4789</td><td>UDP</td><td>Node ↔ Node</td><td>Calico VXLAN overlay (IANA standard)</td></tr>
         <tr><td>51820</td><td>UDP</td><td>Node ↔ Node</td><td>Canal WireGuard encryption (optional)</td></tr>
         <tr><td>4240</td><td>TCP</td><td>Node ↔ Node</td><td>Canal health check</td></tr>
         <tr><td>179</td><td>TCP</td><td>Node ↔ Node</td><td>BGP (if using Calico CNI)</td></tr>
