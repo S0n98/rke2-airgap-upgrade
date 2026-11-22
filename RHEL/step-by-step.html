@@ -1,0 +1,991 @@
+<!doctype html>
+<title>RKE2 RHEL Airgap Upgrade Guide</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg:        #0f1117;
+  --surface:   #191d27;
+  --border:    #252a38;
+  --border-hi: #2f3650;
+  --text:      #d4d8e8;
+  --muted:     #7a84a3;
+  --heading:   #edf0fb;
+  --accent:    #e35050;
+  --accent-hi: #f07070;
+  --green:     #3ecf8e;
+  --amber:     #f4a24b;
+  --red:       #f26472;
+  --blue:      #4f9cf7;
+  --code-bg:   #141720;
+  color-scheme: dark;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:        #f5f3f3;
+    --surface:   #ffffff;
+    --border:    #e0d8d8;
+    --border-hi: #c8b8b8;
+    --text:      #2a2020;
+    --muted:     #7a6060;
+    --heading:   #180808;
+    --accent:    #c42020;
+    --accent-hi: #9a1010;
+    --green:     #157a52;
+    --amber:     #a86210;
+    --red:       #c72536;
+    --blue:      #1a6ed8;
+    --code-bg:   #f0eaea;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg:        #f5f3f3;
+  --surface:   #ffffff;
+  --border:    #e0d8d8;
+  --border-hi: #c8b8b8;
+  --text:      #2a2020;
+  --muted:     #7a6060;
+  --heading:   #180808;
+  --accent:    #c42020;
+  --accent-hi: #9a1010;
+  --green:     #157a52;
+  --amber:     #a86210;
+  --red:       #c72536;
+  --blue:      #1a6ed8;
+  --code-bg:   #f0eaea;
+  color-scheme: light;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.site-nav {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 0;
+  bottom: 0;
+  width: 248px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 24px 0 32px;
+  z-index: 10;
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.nav-logo-mark {
+  width: 30px;
+  height: 30px;
+  background: var(--accent);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -.02em;
+}
+.nav-logo-text { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; color: var(--heading); line-height: 1.2; }
+.nav-logo-sub  { font-size: 10px; color: var(--muted); font-family: 'Inter', sans-serif; font-weight: 400; }
+.nav-section-label {
+  font-size: 10px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted); padding: 10px 20px 4px;
+}
+.nav-link {
+  display: block; padding: 5px 20px; color: var(--muted); text-decoration: none;
+  font-size: 13px; line-height: 1.5; border-left: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.nav-link:hover { color: var(--heading); }
+.nav-link.active { color: var(--accent); border-left-color: var(--accent); }
+.nav-link.sub { padding-left: 32px; font-size: 12px; }
+
+.diff-badge {
+  display: inline-block;
+  font-size: 9px; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.main {
+  margin-left: 248px;
+  padding: 40px max(24px, env(safe-area-inset-right, 0px)) 80px max(32px, env(safe-area-inset-left, 0px));
+  max-width: 900px;
+}
+.page-header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 36px; }
+.page-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+.page-title { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--heading); margin: 0 0 10px; line-height: 1.25; text-wrap: balance; }
+.page-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--muted); align-items: center; }
+.meta-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 500;
+}
+.badge-green { color: var(--green); border-color: var(--green); }
+.badge-amber { color: var(--amber); border-color: var(--amber); }
+.badge-red   { color: var(--red);   border-color: var(--red); }
+.badge-blue  { color: var(--blue);  border-color: var(--blue); }
+
+.section { margin-bottom: 48px; scroll-margin-top: 24px; }
+h2 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--heading); margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); text-wrap: balance; }
+h2 .sn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: var(--accent); color: #fff; border-radius: 4px; font-size: 11px; font-weight: 700; margin-right: 8px; vertical-align: middle; position: relative; top: -1px; }
+h3 { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--heading); margin: 24px 0 10px; }
+p { margin: 0 0 14px; }
+ul, ol { margin: 0 0 14px; padding-left: 20px; }
+li { margin-bottom: 5px; }
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: 3px; padding: 1px 5px; color: var(--accent-hi);
+}
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; padding: 16px 18px; margin: 14px 0 20px; }
+pre code { background: none; border: none; padding: 0; color: var(--text); font-size: 12.5px; line-height: 1.65; }
+.pre-label { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+
+/* RHEL-diff highlight: draws attention to lines that differ from Ubuntu */
+pre code .rhel { color: var(--accent-hi); }
+
+.callout { display: flex; gap: 12px; padding: 14px 16px; border-radius: 8px; border: 1px solid; margin: 16px 0; font-size: 13px; line-height: 1.55; }
+.callout-icon { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+.callout-body { flex: 1; min-width: 0; }
+.callout-body strong { font-weight: 600; display: block; margin-bottom: 2px; }
+.callout.warn  { background: color-mix(in srgb, var(--amber) 8%, var(--bg)); border-color: color-mix(in srgb, var(--amber) 30%, var(--border)); }
+.callout.info  { background: color-mix(in srgb, var(--blue) 8%, var(--bg));  border-color: color-mix(in srgb, var(--blue) 30%, var(--border)); }
+.callout.crit  { background: color-mix(in srgb, var(--red) 8%, var(--bg));   border-color: color-mix(in srgb, var(--red) 30%, var(--border)); }
+.callout.ok    { background: color-mix(in srgb, var(--green) 8%, var(--bg)); border-color: color-mix(in srgb, var(--green) 30%, var(--border)); }
+.callout.rhel  { background: color-mix(in srgb, var(--accent) 8%, var(--bg)); border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); }
+
+.step-list { list-style: none; padding: 0; margin: 0 0 20px; counter-reset: step; }
+.step-list li { counter-increment: step; display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); margin: 0; align-items: flex-start; }
+.step-list li::before { content: counter(step); flex-shrink: 0; width: 22px; height: 22px; background: var(--surface); border: 1px solid var(--border-hi); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; color: var(--accent); margin-top: 1px; }
+
+.upgrade-path { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.vbadge { background: var(--code-bg); border: 1px solid var(--border-hi); border-radius: 4px; padding: 3px 10px; color: var(--heading); }
+.vbadge.current { border-color: var(--red); color: var(--red); }
+.vbadge.target  { border-color: var(--green); color: var(--green); }
+.vbadge.inter   { opacity: .7; }
+.varrow { color: var(--muted); }
+
+.data-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+.data-table th { text-align: left; padding: 7px 12px; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--surface); border-bottom: 1px solid var(--border); }
+.data-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.data-table td code { font-size: 11.5px; }
+.data-table tr:last-child td { border-bottom: none; }
+
+.check-list { list-style: none; padding: 0; margin: 0 0 16px; }
+.check-list li { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; margin: 0; }
+.check-list li:last-child { border-bottom: none; }
+.check-list li::before { content: "☐"; flex-shrink: 0; color: var(--muted); font-size: 14px; line-height: 1.4; }
+
+/* diff banner that marks a section as RHEL-specific */
+.rhel-banner {
+  display: flex; align-items: center; gap: 8px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  border-radius: 6px; padding: 8px 12px; margin-bottom: 14px;
+  font-size: 12px; font-weight: 500; color: var(--accent-hi);
+}
+
+@media (max-width: 700px) {
+  .site-nav { display: none; }
+  .main { margin-left: 0; padding: 24px max(16px, env(safe-area-inset-right, 0px)) 60px max(16px, env(safe-area-inset-left, 0px)); }
+  .page-title { font-size: 20px; }
+}
+</style>
+
+<nav class="site-nav">
+  <div class="nav-logo">
+    <div class="nav-logo-mark">RH</div>
+    <div>
+      <div class="nav-logo-text">RKE2 on RHEL</div>
+      <div class="nav-logo-sub">Airgap Upgrade Guide</div>
+    </div>
+  </div>
+
+  <div class="nav-section-label">Overview</div>
+  <a href="#rhel-differences" class="nav-link active">RHEL vs Ubuntu</a>
+  <a href="#upgrade-path" class="nav-link">Upgrade Path</a>
+
+  <div class="nav-section-label">System Prep</div>
+  <a href="#prerequisites" class="nav-link">Prerequisites</a>
+  <a href="#selinux" class="nav-link">SELinux <span class="diff-badge">RHEL</span></a>
+  <a href="#firewall" class="nav-link">Firewalld <span class="diff-badge">RHEL</span></a>
+  <a href="#networkmanager" class="nav-link">NetworkManager <span class="diff-badge">RHEL</span></a>
+  <a href="#kernel-params" class="nav-link">Kernel Params</a>
+
+  <div class="nav-section-label">Upgrade</div>
+  <a href="#download" class="nav-link">Download Artifacts</a>
+  <a href="#transfer" class="nav-link">Transfer to Airgap</a>
+  <a href="#backup" class="nav-link">etcd Snapshot</a>
+  <a href="#server-upgrade" class="nav-link">Server Node</a>
+  <a href="#agent-upgrade" class="nav-link">Agent Nodes</a>
+  <a href="#verification" class="nav-link">Verification</a>
+
+  <div class="nav-section-label">Post-Upgrade</div>
+  <a href="#custom-images" class="nav-link">Custom Images</a>
+  <a href="#disk-cleanup" class="nav-link">Disk Cleanup</a>
+  <a href="#rollback" class="nav-link">Rollback</a>
+  <a href="#troubleshooting" class="nav-link">Troubleshooting</a>
+
+  <div class="nav-section-label">Scripts</div>
+  <a href="#scripts" class="nav-link">Script Reference</a>
+
+  <div class="nav-section-label">Reference</div>
+  <a href="#checklist" class="nav-link">Full Checklist</a>
+  <a href="#ports" class="nav-link">Port Reference</a>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-eyebrow">Operations Runbook · RHEL Edition</div>
+    <h1 class="page-title">RKE2 Airgap Upgrade Guide — RHEL / Rocky / AlmaLinux</h1>
+    <div class="page-meta">
+      <span class="meta-badge badge-red">RHEL 8 / 9</span>
+      <span class="meta-badge badge-blue">Rocky Linux 8/9</span>
+      <span class="meta-badge badge-blue">AlmaLinux 8/9</span>
+      <span class="meta-badge badge-amber">⚠ One minor version at a time</span>
+      <span class="meta-badge badge-green">v1.27 → v1.32 path</span>
+    </div>
+  </div>
+
+  <!-- RHEL Differences -->
+  <section class="section" id="rhel-differences">
+    <h2><span class="sn">1</span>RHEL vs Ubuntu — Key Differences</h2>
+    <p>This guide covers the same upgrade path as the Ubuntu runbook (<code>v1.27 → v1.32</code>) but addresses the system-level differences that apply to RHEL-family distributions. If you are migrating from the Ubuntu guide, focus on the sections marked <span class="diff-badge">RHEL</span>.</p>
+
+    <table class="data-table">
+      <thead><tr><th>Area</th><th>Ubuntu</th><th>RHEL / Rocky / Alma</th></tr></thead>
+      <tbody>
+        <tr><td>Security module</td><td>AppArmor (optional)</td><td><strong>SELinux — mandatory, must configure</strong></td></tr>
+        <tr><td>Firewall</td><td>ufw / iptables</td><td><strong>firewalld — explicit port rules required</strong></td></tr>
+        <tr><td>Network management</td><td>netplan / systemd-networkd</td><td><strong>NetworkManager — must disable cloud-setup service</strong></td></tr>
+        <tr><td>Package manager</td><td>apt / dpkg</td><td>dnf / rpm (not used for airgap tarball install)</td></tr>
+        <tr><td>Kernel modules</td><td>modprobe.d / /etc/modules</td><td><strong>modules-load.d — different persistence path</strong></td></tr>
+        <tr><td>RKE2 SELinux policy</td><td>Not required</td><td><strong>rke2-selinux RPM must be installed before RKE2</strong></td></tr>
+        <tr><td>nm-cloud-setup</td><td>Not present</td><td><strong>Must be disabled — breaks pod networking</strong></td></tr>
+        <tr><td>chrony</td><td>systemd-timesyncd</td><td>chrony (usually preinstalled; verify NTP sync)</td></tr>
+        <tr><td>Swap</td><td>Disabled in /etc/fstab</td><td>Same — disable and persist</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout rhel">
+      <span class="callout-icon">🎩</span>
+      <div class="callout-body">
+        <strong>SELinux and NetworkManager are the two most common failure causes on RHEL</strong>
+        New operators who skip the SELinux policy install or forget to disable <code>nm-cloud-setup.service</code> will see pods stuck in <code>ContainerCreating</code> or nodes unable to join. These are not optional steps.
+      </div>
+    </div>
+  </section>
+
+  <!-- Upgrade Path -->
+  <section class="section" id="upgrade-path">
+    <h2><span class="sn">2</span>Upgrade Path</h2>
+    <p>The upgrade path is identical to the Ubuntu guide. RHEL has no special version restrictions beyond the standard Kubernetes one-minor-version rule.</p>
+
+    <div class="upgrade-path">
+      <span class="vbadge current">v1.27.x+rke2r1</span>
+      <span class="varrow">→</span>
+      <span class="vbadge inter">v1.28.9+rke2r1</span>
+      <span class="varrow">→</span>
+      <span class="vbadge inter">v1.29.9+rke2r1</span>
+      <span class="varrow">→</span>
+      <span class="vbadge inter">v1.30.9+rke2r1</span>
+      <span class="varrow">→</span>
+      <span class="vbadge inter">v1.31.9+rke2r1</span>
+      <span class="varrow">→</span>
+      <span class="vbadge target">v1.32.13+rke2r1</span>
+    </div>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠</span>
+      <div class="callout-body">
+        <strong>Never skip a minor version</strong>
+        Even on RHEL, you must step through each intermediate release. Attempting to jump from 1.27 to 1.32 will fail or corrupt etcd.
+      </div>
+    </div>
+  </section>
+
+  <!-- Prerequisites -->
+  <section class="section" id="prerequisites">
+    <h2><span class="sn">3</span>Prerequisites</h2>
+
+    <h3>RHEL-specific packages</h3>
+    <p>Install the following packages before the first RKE2 install. In an airgap environment, download these RPMs and their dependencies on a connected machine and transfer them.</p>
+
+<pre><code># Install required packages
+dnf install -y \
+  container-selinux \
+  iptables \
+  libnetfilter_conntrack \
+  libnfnetlink \
+  libnftnl \
+  nfs-utils \
+  cryptsetup
+
+# RHEL 8 only: switch to legacy iptables backend
+# (nftables default causes issues with Kubernetes network policies)
+update-alternatives --set iptables /usr/sbin/iptables-legacy
+update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy</code></pre>
+
+    <div class="callout rhel">
+      <span class="callout-icon">🎩</span>
+      <div class="callout-body">
+        <strong>RHEL 9: iptables-legacy is no longer available</strong>
+        On RHEL 9, nftables is the only backend. RKE2 ≥ 1.29 uses Canal/Flannel which works with nftables, so no backend switch is needed. On RHEL 8, the iptables-legacy switch is still recommended for Kubernetes 1.27–1.28.
+      </div>
+    </div>
+
+    <h3>Disable swap</h3>
+<pre><code>swapoff -a
+# Persist across reboots
+sed -i '/\sswap\s/d' /etc/fstab</code></pre>
+
+    <h3>System limits</h3>
+<pre><code># Increase open file limits
+cat >> /etc/security/limits.conf &lt;&lt;'EOF'
+* soft nofile 1048576
+* hard nofile 1048576
+* soft nproc  unlimited
+* hard nproc  unlimited
+EOF</code></pre>
+  </section>
+
+  <!-- SELinux -->
+  <section class="section" id="selinux">
+    <h2><span class="sn">4</span>SELinux Configuration <span class="diff-badge">RHEL</span></h2>
+
+    <div class="rhel-banner">🎩 This section has no Ubuntu equivalent — required on all RHEL-family systems.</div>
+
+    <p>RKE2 ships a dedicated SELinux policy package (<code>rke2-selinux</code>) that must be installed before RKE2 itself. Without it, containerd, kubelet, and pod processes will be denied by SELinux and workloads will fail to start.</p>
+
+    <div class="callout crit">
+      <span class="callout-icon">🛑</span>
+      <div class="callout-body">
+        <strong>Do not set SELinux to Permissive in production</strong>
+        Setting <code>SELINUX=permissive</code> in <code>/etc/selinux/config</code> disables all MAC enforcement and is a serious security regression. Use the <code>rke2-selinux</code> policy package instead — it permits exactly the operations RKE2 needs while keeping SELinux enforcing.
+      </div>
+    </div>
+
+    <h3>Install rke2-selinux (airgap)</h3>
+    <p>Download the RPM on an internet-connected machine and transfer it to the airgap node.</p>
+
+<pre><code># On the internet-connected machine — download the policy RPM
+# For RHEL 8:
+curl -LO "https://github.com/rancher/rke2-selinux/releases/download/v0.19.stable.1/rke2-selinux-0.19-1.el8.noarch.rpm"
+# For RHEL 9:
+curl -LO "https://github.com/rancher/rke2-selinux/releases/download/v0.19.stable.1/rke2-selinux-0.19-1.el9.noarch.rpm"</code></pre>
+
+<pre><code># On the airgap node — install the policy
+# RHEL 8:
+rpm -ivh /root/rke2-setup/rke2-selinux-0.19-1.el8.noarch.rpm
+# RHEL 9:
+rpm -ivh /root/rke2-setup/rke2-selinux-0.19-1.el9.noarch.rpm
+
+# Verify the policy was loaded
+semodule -l | grep rke2</code></pre>
+
+    <h3>Verify SELinux is enforcing</h3>
+<pre><code>getenforce
+# Must output: Enforcing
+
+# If Permissive or Disabled, enable it:
+setenforce 1
+# And persist:
+sed -i 's/^SELINUX=.*/SELINUX=enforcing/' /etc/selinux/config</code></pre>
+
+    <h3>After each RKE2 upgrade — relabel if needed</h3>
+    <p>When RKE2 adds new files, they may need SELinux context relabeling. If you see AVC denials after an upgrade:</p>
+<pre><code># Check for recent AVC denials related to RKE2
+ausearch -m AVC -ts recent 2>/dev/null | grep rke2 | head -20
+
+# Relabel RKE2 directories
+restorecon -Rv /var/lib/rancher/rke2/
+restorecon -Rv /usr/local/lib/systemd/system/rke2-*.service</code></pre>
+  </section>
+
+  <!-- Firewall -->
+  <section class="section" id="firewall">
+    <h2><span class="sn">5</span>Firewalld Configuration <span class="diff-badge">RHEL</span></h2>
+
+    <div class="rhel-banner">🎩 Ubuntu uses ufw or no firewall. RHEL enables firewalld by default — all required ports must be opened explicitly.</div>
+
+    <p>RKE2 requires several ports for intra-cluster communication. Open them permanently with <code>firewall-cmd</code>.</p>
+
+    <h3>Server node firewall rules</h3>
+<pre><code># RKE2 server node — open required ports
+firewall-cmd --permanent --add-port=6443/tcp   # Kubernetes API server
+firewall-cmd --permanent --add-port=9345/tcp   # RKE2 supervisor API
+firewall-cmd --permanent --add-port=2379/tcp   # etcd client
+firewall-cmd --permanent --add-port=2380/tcp   # etcd peer
+firewall-cmd --permanent --add-port=10250/tcp  # kubelet API
+firewall-cmd --permanent --add-port=10257/tcp  # kube-controller-manager
+firewall-cmd --permanent --add-port=10259/tcp  # kube-scheduler
+firewall-cmd --permanent --add-port=4240/tcp   # Canal health check
+firewall-cmd --permanent --add-port=51820/udp  # Canal WireGuard (optional)
+firewall-cmd --permanent --add-port=8472/udp   # Canal VXLAN (Flannel)
+firewall-cmd --permanent --add-port=179/tcp    # BGP (Calico, if used)
+
+# NodePort range
+firewall-cmd --permanent --add-port=30000-32767/tcp
+firewall-cmd --permanent --add-port=30000-32767/udp
+
+# Apply all changes
+firewall-cmd --reload
+
+# Verify
+firewall-cmd --list-ports</code></pre>
+
+    <h3>Agent node firewall rules</h3>
+<pre><code># RKE2 agent node — a subset of server rules
+firewall-cmd --permanent --add-port=10250/tcp  # kubelet API
+firewall-cmd --permanent --add-port=8472/udp   # Canal VXLAN
+firewall-cmd --permanent --add-port=51820/udp  # Canal WireGuard (optional)
+firewall-cmd --permanent --add-port=30000-32767/tcp
+firewall-cmd --permanent --add-port=30000-32767/udp
+firewall-cmd --reload</code></pre>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ</span>
+      <div class="callout-body">
+        <strong>Single-node clusters can disable firewalld safely</strong>
+        On a single-node dev or lab cluster where all traffic is local, you can disable firewalld: <code>systemctl disable --now firewalld</code>. For production multi-node clusters, always use the explicit port list above.
+      </div>
+    </div>
+  </section>
+
+  <!-- NetworkManager -->
+  <section class="section" id="networkmanager">
+    <h2><span class="sn">6</span>NetworkManager Configuration <span class="diff-badge">RHEL</span></h2>
+
+    <div class="rhel-banner">🎩 This is the most common source of pod networking failures on RHEL. Do not skip this section.</div>
+
+    <h3>Disable nm-cloud-setup</h3>
+    <p><code>nm-cloud-setup.service</code> continuously reconfigures network interfaces for cloud environments. It will overwrite the routing tables that Canal/Flannel sets up for pod networking, causing <code>ContainerCreating</code> pods that never start.</p>
+
+<pre><code># Disable the cloud network setup timer and service
+systemctl disable --now nm-cloud-setup.service nm-cloud-setup.timer 2>/dev/null || true
+
+# Verify they are inactive
+systemctl is-active nm-cloud-setup.service nm-cloud-setup.timer 2>/dev/null
+# Expected: inactive (or Unit not found — also fine)</code></pre>
+
+    <h3>Tell NetworkManager to ignore the CNI interfaces</h3>
+    <p>Without this, NetworkManager will manage the virtual <code>cni0</code>, <code>flannel.1</code>, and <code>veth*</code> interfaces that Canal creates, and may reset them when it detects changes.</p>
+
+<pre><code>cat > /etc/NetworkManager/conf.d/rke2-cni.conf &lt;&lt;'EOF'
+[keyfile]
+unmanaged-devices=interface-name:cni0;interface-name:flannel.1;interface-name:veth*;interface-name:canal*
+EOF
+
+systemctl reload NetworkManager</code></pre>
+
+    <h3>Verify the network interface config</h3>
+<pre><code># Confirm the node's primary interface is managed
+nmcli device status
+
+# Confirm RKE2's CNI interfaces are unmanaged
+nmcli device status | grep -E "cni0|flannel|veth"
+# Expected output: unmanaged</code></pre>
+  </section>
+
+  <!-- Kernel Params -->
+  <section class="section" id="kernel-params">
+    <h2><span class="sn">7</span>Kernel Parameters &amp; Modules</h2>
+    <p>These parameters are required by Kubernetes on all Linux distributions. RHEL uses <code>/etc/modules-load.d/</code> for module persistence (different path from some Ubuntu setups).</p>
+
+<pre><code># Load required kernel modules now
+modprobe overlay
+modprobe br_netfilter
+
+# Persist across reboots (RHEL path)
+cat > /etc/modules-load.d/rke2.conf &lt;&lt;'EOF'
+overlay
+br_netfilter
+EOF
+
+# Set required sysctl parameters
+cat > /etc/sysctl.d/99-rke2.conf &lt;&lt;'EOF'
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+
+# Apply immediately
+sysctl --system
+
+# Verify
+sysctl net.bridge.bridge-nf-call-iptables net.ipv4.ip_forward</code></pre>
+
+    <div class="callout rhel">
+      <span class="callout-icon">🎩</span>
+      <div class="callout-body">
+        <strong>RHEL 9 ships with <code>br_netfilter</code> as a built-in</strong>
+        On RHEL 9, <code>br_netfilter</code> may already be compiled into the kernel. <code>modprobe</code> will succeed silently even if that is the case, so the commands above are safe to run on both RHEL 8 and 9.
+      </div>
+    </div>
+  </section>
+
+  <!-- Download -->
+  <section class="section" id="download">
+    <h2><span class="sn">8</span>Download Artifacts</h2>
+    <p>Artifacts are identical to the Ubuntu guide — the RKE2 tarball is the same binary regardless of OS. Download on an internet-connected machine, verify checksums, then transfer.</p>
+
+    <p>The <code>RHEL/scripts/download-artifacts.sh</code> script handles this automatically. See the <a href="#scripts">Script Reference</a> section for usage.</p>
+
+<pre><code># Manual download for a single version (example: v1.28.9+rke2r1)
+VERSION="v1.28.9+rke2r1"
+ENCODED="v1.28.9%2Brke2r1"
+OUTDIR="./rke2-airgap/${VERSION}"
+mkdir -p "$OUTDIR"
+
+curl -fL "https://github.com/rancher/rke2/releases/download/${ENCODED}/rke2.linux-amd64.tar.gz" \
+  -o "$OUTDIR/rke2.linux-amd64.tar.gz"
+curl -fsSL "https://github.com/rancher/rke2/releases/download/${ENCODED}/sha256sum-amd64.txt" \
+  -o "$OUTDIR/sha256sum-amd64.txt"
+
+# Verify
+cd "$OUTDIR" && sha256sum -c sha256sum-amd64.txt --ignore-missing</code></pre>
+
+    <div class="callout rhel">
+      <span class="callout-icon">🎩</span>
+      <div class="callout-body">
+        <strong>Also download the rke2-selinux RPM</strong>
+        In addition to the version tarballs, download the <code>rke2-selinux</code> RPM for your RHEL major version and add it to the transfer package. See <a href="#selinux">Section 4</a>. If the cluster has never had RKE2 installed, this RPM must be installed before the first RKE2 binary.
+      </div>
+    </div>
+  </section>
+
+  <!-- Transfer -->
+  <section class="section" id="transfer">
+    <h2><span class="sn">9</span>Transfer to Airgap Environment</h2>
+
+<pre><code># Transfer all artifacts from the download machine
+scp -r ./rke2-airgap/ admin@&lt;airgap-server-ip&gt;:/root/rke2-upgrade/
+
+# Re-verify checksums on the airgap node after transfer
+for dir in /root/rke2-upgrade/v*/; do
+  echo "Verifying $(basename $dir) ..."
+  cd "$dir"
+  sha256sum -c sha256sum-amd64.txt --ignore-missing 2>&1 | grep -E "OK|FAILED"
+  cd - &gt;/dev/null
+done</code></pre>
+  </section>
+
+  <!-- Backup -->
+  <section class="section" id="backup">
+    <h2><span class="sn">10</span>etcd Snapshot (Backup)</h2>
+    <p>Take a manual snapshot before each upgrade step. The command is identical on RHEL and Ubuntu.</p>
+
+<pre><code>rke2 etcd-snapshot save --name "pre-upgrade-$(date +%Y%m%d%H%M)"
+
+# Verify
+ls -lh /var/lib/rancher/rke2/server/db/snapshots/ | tail -3</code></pre>
+  </section>
+
+  <!-- Server Upgrade -->
+  <section class="section" id="server-upgrade">
+    <h2><span class="sn">11</span>Server Node Upgrade</h2>
+    <p>Repeat for each version in the upgrade path. The install procedure is identical to Ubuntu because we use the tarball installer, not RPM packages.</p>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ</span>
+      <div class="callout-body">
+        <strong>Tarball install vs RPM install</strong>
+        RKE2 can be installed via RPM (<code>dnf install rke2-server</code>) or via the tarball installer. For airgap environments, the <strong>tarball method is simpler</strong> because RPM installation requires either a local DNF repository or manual dependency resolution. The upgrade scripts in this guide use the tarball installer exclusively.
+      </div>
+    </div>
+
+    <ol class="step-list">
+      <li>
+        <div>
+          <strong>Verify SELinux policy is current</strong>
+          <pre><code>semodule -l | grep rke2
+# Should show: rke2  (version number)</code></pre>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Take an etcd snapshot</strong>
+          <pre><code>rke2 etcd-snapshot save --name "pre-$(date +%Y%m%d%H%M)"</code></pre>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Install the new binary from the airgap tarball</strong>
+          <pre><code>TARGET_VERSION="v1.28.9+rke2r1"
+INSTALL_RKE2_ARTIFACT_PATH="/root/rke2-upgrade/${TARGET_VERSION}" \
+  INSTALL_RKE2_VERSION="${TARGET_VERSION}" \
+  bash /root/rke2-upgrade/install.sh</code></pre>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Verify binary version</strong>
+          <pre><code>rke2 --version | head -1</code></pre>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Restart the server service</strong>
+          <pre><code>systemctl restart rke2-server</code></pre>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">On RHEL, SELinux may log AVC denials during the first restart after an upgrade while new file contexts are applied. These are transient and the service will come up. Check with <code>journalctl -u rke2-server -f</code>.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Wait for active, then verify node Ready</strong>
+          <pre><code>until systemctl is-active rke2-server &gt;/dev/null 2&gt;&amp;1 || \
+    systemctl is-failed rke2-server &gt;/dev/null 2&gt;&amp;1; do sleep 5; done
+systemctl is-active rke2-server &amp;&amp; echo UP || echo FAILED
+kubectl get nodes</code></pre>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Wait for system pods</strong>
+          <pre><code>kubectl rollout status -n kube-system daemonset/rke2-canal --timeout=120s
+kubectl rollout status -n kube-system deployment/rke2-coredns-rke2-coredns --timeout=120s</code></pre>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Repeat from step 1 with the next version</strong>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Agent Upgrade -->
+  <section class="section" id="agent-upgrade">
+    <h2><span class="sn">12</span>Agent Node Upgrade</h2>
+    <p>Apply the same RHEL system preparation (SELinux, firewalld, NetworkManager) to every agent node before upgrading it. Then follow the same cordon/drain/upgrade/uncordon sequence as Ubuntu.</p>
+
+<pre><code># From the server: cordon and drain
+kubectl cordon &lt;agent-node-name&gt;
+kubectl drain &lt;agent-node-name&gt; --ignore-daemonsets --delete-emptydir-data
+
+# On the agent node:
+TARGET_VERSION="v1.32.13+rke2r1"
+INSTALL_RKE2_ARTIFACT_PATH="/root/rke2-upgrade/${TARGET_VERSION}" \
+  INSTALL_RKE2_VERSION="${TARGET_VERSION}" \
+  INSTALL_RKE2_TYPE="agent" \
+  bash /root/rke2-upgrade/install.sh
+systemctl restart rke2-agent
+
+# Back on the server: verify and uncordon
+kubectl get node &lt;agent-node-name&gt;
+kubectl uncordon &lt;agent-node-name&gt;</code></pre>
+  </section>
+
+  <!-- Verification -->
+  <section class="section" id="verification">
+    <h2><span class="sn">13</span>Verification</h2>
+
+<pre><code># Cluster version and node state
+kubectl get nodes -o wide
+kubectl version
+
+# All pods — flag non-Running
+kubectl get pods -A | grep -v "Running\|Completed" | grep -v "NAME"
+
+# No AVC denials from RKE2 since upgrade
+ausearch -m AVC -ts recent 2>/dev/null | grep -c rke2 || echo "0 AVC denials"
+
+# No node taints
+kubectl describe node | grep -E "Taint"
+
+# CoreDNS resolution
+kubectl run -it --rm dns-test --image=busybox --restart=Never -- \
+  nslookup kubernetes.default.svc.cluster.local</code></pre>
+  </section>
+
+  <!-- Custom Images -->
+  <section class="section" id="custom-images">
+    <h2><span class="sn">14</span>Custom Images</h2>
+    <p>The containerd major version bump (1.7→2.x on the 1.27→1.32 path) evicts locally-imported images on RHEL exactly as it does on Ubuntu. Re-import using <code>ctr</code>.</p>
+
+<pre><code># Check what custom images are loaded
+/var/lib/rancher/rke2/bin/ctr \
+  --address /run/k3s/containerd/containerd.sock \
+  -n k8s.io images ls | grep -v "rancher\|k8s.gcr\|registry.k8s"
+
+# Re-import a missing image
+/var/lib/rancher/rke2/bin/ctr \
+  --address /run/k3s/containerd/containerd.sock \
+  -n k8s.io images import /path/to/image.tar
+
+# Restart affected deployments
+kubectl rollout restart deployment/&lt;name&gt; -n &lt;namespace&gt;</code></pre>
+
+    <div class="callout rhel">
+      <span class="callout-icon">🎩</span>
+      <div class="callout-body">
+        <strong>If Docker is installed on RHEL: use Podman instead</strong>
+        RHEL ships with Podman by default and Docker may not be installed. To export an image with Podman: <code>podman save my-image:tag | ctr --address /run/k3s/containerd/containerd.sock -n k8s.io images import -</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- Disk Cleanup -->
+  <section class="section" id="disk-cleanup">
+    <h2><span class="sn">15</span>Disk Cleanup</h2>
+
+<pre><code># Remove old RKE2 data directories (each step leaves ~300 MB)
+CURRENT=$(rke2 --version | awk '{print $3}' | sed 's/+/-/')
+for dir in /var/lib/rancher/rke2/data/*/; do
+  if ! echo "$(basename $dir)" | grep -q "$CURRENT"; then
+    echo "Removing: $(basename $dir)"
+    rm -rf "$dir"
+  fi
+done
+df -h /</code></pre>
+  </section>
+
+  <!-- Rollback -->
+  <section class="section" id="rollback">
+    <h2><span class="sn">16</span>Rollback</h2>
+    <p>Rollback procedure is identical to Ubuntu: stop the service, re-install the previous binary, restore etcd from snapshot. No RHEL-specific steps are needed beyond ensuring the SELinux policy version matches the binary version being restored.</p>
+
+<pre><code>systemctl stop rke2-server
+
+PREV_VERSION="v1.31.9+rke2r1"
+INSTALL_RKE2_ARTIFACT_PATH="/root/rke2-upgrade/${PREV_VERSION}" \
+  INSTALL_RKE2_VERSION="${PREV_VERSION}" \
+  bash /root/rke2-upgrade/install.sh
+
+SNAPSHOT_NAME="pre-upgrade-202611220000"
+rke2 server \
+  --cluster-reset \
+  --cluster-reset-restore-path=/var/lib/rancher/rke2/server/db/snapshots/${SNAPSHOT_NAME}
+
+systemctl start rke2-server</code></pre>
+  </section>
+
+  <!-- Troubleshooting -->
+  <section class="section" id="troubleshooting">
+    <h2><span class="sn">17</span>Troubleshooting (RHEL-specific)</h2>
+
+    <h3>Pods stuck in ContainerCreating — SELinux AVC denial</h3>
+<pre><code># Check for AVC denials
+ausearch -m AVC -ts recent 2>/dev/null | grep -E "rke2|containerd|kubelet"
+
+# Install or update the SELinux policy
+rpm -ivh --replacepkgs /root/rke2-setup/rke2-selinux-*.rpm
+semodule -l | grep rke2
+
+# Relabel RKE2 paths
+restorecon -Rv /var/lib/rancher/rke2/</code></pre>
+
+    <h3>Pods not scheduling — nm-cloud-setup resetting routes</h3>
+<pre><code># Confirm the service is disabled
+systemctl is-active nm-cloud-setup.service nm-cloud-setup.timer
+
+# If still active, disable and reboot
+systemctl disable --now nm-cloud-setup.service nm-cloud-setup.timer
+# Restart networking
+systemctl restart NetworkManager
+# Then restart RKE2 to re-establish CNI routes
+systemctl restart rke2-server</code></pre>
+
+    <h3>Agent cannot reach server — firewalld blocking port 9345</h3>
+<pre><code"># Test from the agent node
+curl -k https://&lt;server-ip&gt;:9345/ping
+
+# If it hangs, open the port on the SERVER
+firewall-cmd --permanent --add-port=9345/tcp
+firewall-cmd --reload</code></pre>
+
+    <h3>rke2-server fails to start — journal shows SELinux denials</h3>
+<pre><code># See if SELinux is blocking the binary itself
+ausearch -m AVC -ts recent 2>/dev/null | grep rke2 | tail -5
+
+# Temporarily set to permissive to confirm SELinux is the cause
+setenforce 0
+systemctl restart rke2-server
+# If it starts: re-enable and fix the policy
+setenforce 1
+# Update the rke2-selinux RPM to its latest version</code></pre>
+
+    <h3>Disk pressure / eviction threshold</h3>
+<pre><code"># Check disk — same thresholds as Ubuntu (nodefs.available < 5% = eviction)
+df -h /var/lib/rancher/rke2/
+
+# Remove old data dirs
+ls /var/lib/rancher/rke2/data/
+# Keep only current, remove old v1.{28,29,30,31}.* directories
+
+# Check for taint
+kubectl describe node | grep Taint</code></pre>
+  </section>
+
+  <!-- Scripts -->
+  <section class="section" id="scripts">
+    <h2><span class="sn">18</span>Script Reference</h2>
+    <p>All scripts are in the <code>RHEL/scripts/</code> directory. They wrap the procedures in this guide with RHEL-aware checks (SELinux, firewalld, NetworkManager).</p>
+
+    <table class="data-table">
+      <thead><tr><th>Script</th><th>What it does</th><th>Run on</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>prepare-node.sh</code></td>
+          <td>One-time RHEL system setup: kernel modules, sysctl, swap, NetworkManager CNI config, SELinux policy install</td>
+          <td>Server &amp; agent nodes (once)</td>
+        </tr>
+        <tr>
+          <td><code>open-firewall.sh</code></td>
+          <td>Opens all required firewalld ports for a server or agent node</td>
+          <td>Server &amp; agent nodes (once)</td>
+        </tr>
+        <tr>
+          <td><code>download-artifacts.sh</code></td>
+          <td>Downloads all version tarballs + rke2-selinux RPM on an internet machine</td>
+          <td>Internet-connected machine</td>
+        </tr>
+        <tr>
+          <td><code>upgrade-server.sh</code></td>
+          <td>Installs one version step, restarts rke2-server, verifies Ready</td>
+          <td>Server node (each step)</td>
+        </tr>
+        <tr>
+          <td><code>upgrade-agent.sh</code></td>
+          <td>Upgrades an agent node with cordon/drain gate</td>
+          <td>Agent node</td>
+        </tr>
+        <tr>
+          <td><code>post-upgrade-cleanup.sh</code></td>
+          <td>Removes old RKE2 data directories, reports disk reclaimed</td>
+          <td>Server node (once after final step)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Typical run order</h3>
+<pre><code># 1. First time only — prepare node and open firewall
+sudo bash RHEL/scripts/prepare-node.sh
+sudo bash RHEL/scripts/open-firewall.sh server
+
+# 2. Download artifacts (internet-connected machine)
+bash RHEL/scripts/download-artifacts.sh ./rke2-airgap
+
+# 3. Transfer to server and upgrade step by step
+bash RHEL/scripts/upgrade-server.sh v1.28.9+rke2r1 /root/rke2-upgrade
+bash RHEL/scripts/upgrade-server.sh v1.29.9+rke2r1 /root/rke2-upgrade
+bash RHEL/scripts/upgrade-server.sh v1.30.9+rke2r1 /root/rke2-upgrade
+bash RHEL/scripts/upgrade-server.sh v1.31.9+rke2r1 /root/rke2-upgrade
+bash RHEL/scripts/upgrade-server.sh v1.32.13+rke2r1 /root/rke2-upgrade
+
+# 4. Clean up
+bash RHEL/scripts/post-upgrade-cleanup.sh</code></pre>
+  </section>
+
+  <!-- Checklist -->
+  <section class="section" id="checklist">
+    <h2><span class="sn">19</span>Full Checklist</h2>
+
+    <h3>One-time RHEL node preparation (all nodes)</h3>
+    <ul class="check-list">
+      <li>Swap disabled (<code>swapoff -a</code> + removed from <code>/etc/fstab</code>)</li>
+      <li><code>container-selinux</code>, <code>iptables</code>, <code>nfs-utils</code> packages installed</li>
+      <li>RHEL 8: <code>iptables-legacy</code> backend set via <code>update-alternatives</code></li>
+      <li>Kernel modules <code>overlay</code> and <code>br_netfilter</code> loaded and persisted in <code>/etc/modules-load.d/rke2.conf</code></li>
+      <li>sysctl parameters set in <code>/etc/sysctl.d/99-rke2.conf</code> and applied</li>
+      <li><code>nm-cloud-setup.service</code> and <code>nm-cloud-setup.timer</code> disabled</li>
+      <li>NetworkManager CNI ignore config written to <code>/etc/NetworkManager/conf.d/rke2-cni.conf</code></li>
+      <li><code>rke2-selinux</code> RPM installed; <code>semodule -l | grep rke2</code> confirms policy loaded</li>
+      <li>SELinux is <code>Enforcing</code> (<code>getenforce</code>)</li>
+      <li>Firewalld rules applied for all required ports</li>
+    </ul>
+
+    <h3>Before each upgrade</h3>
+    <ul class="check-list">
+      <li>Disk free on <code>/</code> ≥ 20 GB</li>
+      <li>All nodes <code>Ready</code></li>
+      <li>etcd snapshot taken</li>
+      <li>Artifact tarball present and checksum verified</li>
+    </ul>
+
+    <h3>After each upgrade step</h3>
+    <ul class="check-list">
+      <li>No AVC denials for RKE2 processes (<code>ausearch -m AVC -ts recent | grep rke2</code>)</li>
+      <li>Node shows <code>Ready</code> at new version</li>
+      <li>Canal, CoreDNS rollout complete</li>
+    </ul>
+
+    <h3>After final upgrade step</h3>
+    <ul class="check-list">
+      <li>All agent nodes upgraded and uncordoned</li>
+      <li>All application pods Running</li>
+      <li>Custom images confirmed in containerd store</li>
+      <li>Old RKE2 data directories removed</li>
+      <li>No node taints</li>
+      <li>Post-upgrade etcd snapshot saved</li>
+    </ul>
+  </section>
+
+  <!-- Port Reference -->
+  <section class="section" id="ports">
+    <h2><span class="sn">20</span>Port Reference</h2>
+
+    <table class="data-table">
+      <thead><tr><th>Port</th><th>Protocol</th><th>Direction</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>6443</td><td>TCP</td><td>Agent → Server</td><td>Kubernetes API server</td></tr>
+        <tr><td>9345</td><td>TCP</td><td>Agent → Server</td><td>RKE2 supervisor API (agent registration)</td></tr>
+        <tr><td>2379</td><td>TCP</td><td>Server ↔ Server</td><td>etcd client requests</td></tr>
+        <tr><td>2380</td><td>TCP</td><td>Server ↔ Server</td><td>etcd peer communication</td></tr>
+        <tr><td>10250</td><td>TCP</td><td>Any → Node</td><td>kubelet API (metrics, exec, logs)</td></tr>
+        <tr><td>10257</td><td>TCP</td><td>localhost</td><td>kube-controller-manager</td></tr>
+        <tr><td>10259</td><td>TCP</td><td>localhost</td><td>kube-scheduler</td></tr>
+        <tr><td>8472</td><td>UDP</td><td>Node ↔ Node</td><td>Canal VXLAN (Flannel overlay)</td></tr>
+        <tr><td>51820</td><td>UDP</td><td>Node ↔ Node</td><td>Canal WireGuard encryption (optional)</td></tr>
+        <tr><td>4240</td><td>TCP</td><td>Node ↔ Node</td><td>Canal health check</td></tr>
+        <tr><td>179</td><td>TCP</td><td>Node ↔ Node</td><td>BGP (if using Calico CNI)</td></tr>
+        <tr><td>30000–32767</td><td>TCP/UDP</td><td>External → Node</td><td>NodePort services</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<script>
+const sections = document.querySelectorAll('.section[id]');
+const links = document.querySelectorAll('.nav-link');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id));
+    }
+  });
+}, { threshold: 0.1, rootMargin: '-10% 0px -80% 0px' });
+sections.forEach(s => obs.observe(s));
+</script>
