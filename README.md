@@ -23,7 +23,6 @@ Operational runbook and scripts for upgrading an RKE2 Kubernetes cluster in an *
 | `scripts/upgrade-agent.sh` | Upgrades an agent (worker) node to the target version |
 | `scripts/post-upgrade-cleanup.sh` | Removes old RKE2 data directories and reports disk reclaimed |
 | `scripts/verify-services.sh` | Checks all service pods are Running post-upgrade |
-| `scripts/switch-cni-to-calico.sh` | Switches cluster CNI from Canal to pure Calico after upgrade |
 | `pre-upgrade-state.txt` | Snapshot of pod state taken before the upgrade |
 
 ## Quick start
@@ -64,23 +63,13 @@ scp -r ./rke2-airgap-artifacts/ admin@<server-ip>:/root/rke2-upgrade/
 ./scripts/post-upgrade-cleanup.sh
 ```
 
-### 6. (Optional) Switch CNI from Canal to Calico
-
-After the upgrade is complete and all services are healthy, you can migrate from the default Canal CNI (Flannel VXLAN + Calico NetworkPolicy) to **pure Calico CNI** (Calico manages both overlay and policy):
-
-```bash
-sudo bash ./scripts/switch-cni-to-calico.sh
-```
-
-The script adds `cni: calico` to `/etc/rancher/rke2/config.yaml`, restarts `rke2-server`, waits for the Calico DaemonSet to become Ready, and restarts all application pods. Calico images are bundled in the RKE2 airgap tarballs (v1.30+) — no extra downloads required. Plan for ~2 minutes of pod networking interruption.
-
 ## Important notes
 
 - **One minor version at a time** — skipping minor versions is not supported
 - **Disk space** — ensure ≥ 20 GB free before starting; each step uses ~300 MB
 - **Custom images** — locally-built images may be evicted after a containerd major version upgrade; save them as tar archives and re-import with `ctr images import`
 - **etcd snapshot** — always take a snapshot before each step (`rke2 etcd-snapshot save --name pre-upgrade-$(date +%Y%m%d)`)
-- **Calico CNI** — this runbook assumes the cluster was installed with `cni: calico` in `/etc/rancher/rke2/config.yaml`. Calico images are bundled in the RKE2 tarball (v1.30+). If upgrading a Canal-based cluster and want to switch to Calico, use `scripts/switch-cni-to-calico.sh` after the full k8s upgrade
+- **Calico CNI** — this runbook assumes the cluster was installed with `cni: calico` in `/etc/rancher/rke2/config.yaml`. Confirm before upgrading: `grep cni /etc/rancher/rke2/config.yaml` should return `cni: calico`. Calico images are bundled in the RKE2 tarball (v1.30+) — no separate airgap download needed
 - **Starting version** — this runbook was tested from `v1.27.13+rke2r1` (EOL, Calico CNI configured); if your starting version differs, verify the upgrade path at [rke2 releases](https://github.com/rancher/rke2/releases)
 
 ## Full guide
