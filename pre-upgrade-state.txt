@@ -1,0 +1,214 @@
+=== PRE-UPGRADE SERVICE STATUS ===
+Date: Sun Nov 22 05:23:03 AM UTC 2026
+
+--- Running pods ---
+default           minio-operator-86f65d864f-gxvk4                                   1/1     Running                       1 (4d22h ago)     60d
+default           minio-operator-86f65d864f-zbdtp                                   1/1     Running                       0                 60d
+default           myminio-pool-test-0                                               2/2     Running                       0                 60d
+default           nessie-77f5f7799b-6v9gn                                           1/1     Running                       0                 50d
+default           superset-7746b8f8f5-7z5zd                                         1/1     Running                       0                 3d17h
+default           superset-postgresql-0                                             1/1     Running                       0                 60d
+default           superset-redis-master-0                                           1/1     Running                       0                 60d
+default           superset-worker-64c98f45b4-zdqx7                                  1/1     Running                       0                 3d17h
+default           trino-coordinator-74b8bf4858-smbxz                                1/1     Running                       0                 50d
+default           trino-worker-6c947cdd59-998wj                                     1/1     Running                       0                 59d
+kube-system       cloud-controller-manager-rag                                      1/1     Running                       180 (4d22h ago)   171d
+kube-system       etcd-rag                                                          1/1     Running                       0                 60d
+kube-system       kube-apiserver-rag                                                1/1     Running                       1                 4d22h
+kube-system       kube-controller-manager-rag                                       1/1     Running                       178 (4d22h ago)   171d
+kube-system       kube-proxy-rag                                                    1/1     Running                       4 (87d ago)       171d
+kube-system       kube-scheduler-rag                                                1/1     Running                       154 (4d22h ago)   171d
+kube-system       rke2-canal-bgqfs                                                  2/2     Running                       8 (87d ago)       171d
+kube-system       rke2-coredns-rke2-coredns-864fbd7785-57f5b                        1/1     Running                       4 (87d ago)       171d
+kube-system       rke2-coredns-rke2-coredns-autoscaler-6c87968579-bcmjb             1/1     Running                       4 (87d ago)       171d
+kube-system       rke2-ingress-nginx-controller-cctfv                               1/1     Running                       0                 60d
+kube-system       rke2-metrics-server-7f745dbddf-j6lr4                              1/1     Running                       4 (87d ago)       171d
+kube-system       rke2-snapshot-controller-7d6476d7cb-6ct4l                         1/1     Running                       90 (4d22h ago)    60d
+kube-system       rke2-snapshot-validation-webhook-5649fbd66c-cdk8f                 1/1     Running                       0                 60d
+logging           opensearch-cluster-master-0                                       1/1     Running                       0                 50d
+logging           opensearch-dashboards-5c9bbcd996-scm8q                            1/1     Running                       0                 50d
+monitoring        fluent-bit-4plls                                                  1/1     Running                       0                 52d
+monitoring        kube-prometheus-stack-prometheus-node-exporter-cqw7g              1/1     Running                       0                 60d
+monitoring        loki-0                                                            2/2     Running                       0                 50d
+monitoring        loki-canary-m76ft                                                 1/1     Running                       0                 50d
+monitoring        trino-audit-shim-5f96d96f95-v4sgb                                 1/1     Running                       0                 50d
+nfs-provisioner   nfs-provisioner-nfs-subdir-external-provisioner-67995c6698znzv4   1/1     Running                       92 (4d22h ago)    60d
+ranger            ranger-apache-ranger-756f8d5c6-kwsn2                              1/1     Running                       0                 50d
+ranger            ranger-postgresql-0                                               1/1     Running                       0                 60d
+spark-operator    spark-operator-controller-586548d44d-zqxdn                        1/1     Running                       1 (4d22h ago)     50d
+spark-operator    spark-operator-webhook-67c678df5c-hz9b6                           1/1     Running                       92 (4d22h ago)    60d
+
+--- Pre-existing broken pods (NOT upgrade-related) ---
+airflow           airflow-api-server-5d9b85bc95-5h7cr                               0/1     ContainerStatusUnknown        1                 72d
+airflow           airflow-api-server-5d9b85bc95-5x6kl                               0/1     ContainerStatusUnknown        9 (73d ago)       73d
+airflow           airflow-api-server-5d9b85bc95-5zhjb                               0/1     Init:ContainerStatusUnknown   0                 101d
+airflow           airflow-api-server-5d9b85bc95-8jvqb                               0/1     Init:ContainerStatusUnknown   0                 74d
+airflow           airflow-api-server-5d9b85bc95-cxkr5                               0/1     ContainerStatusUnknown        1 (73d ago)       73d
+airflow           airflow-api-server-5d9b85bc95-fjnfj                               0/1     ContainerStatusUnknown        3                 72d
+airflow           airflow-api-server-5d9b85bc95-fxq72                               0/1     ContainerStatusUnknown        62 (72d ago)      73d
+airflow           airflow-api-server-5d9b85bc95-gbhcn                               0/1     Init:ContainerStatusUnknown   0                 75d
+airflow           airflow-api-server-5d9b85bc95-grnw5                               0/1     ContainerStatusUnknown        119 (73d ago)     74d
+airflow           airflow-api-server-5d9b85bc95-kj5tp                               0/1     ContainerStatusUnknown        3 (74d ago)       74d
+airflow           airflow-api-server-5d9b85bc95-l55fc                               0/1     ContainerStatusUnknown        2 (73d ago)       73d
+airflow           airflow-api-server-5d9b85bc95-qjrj5                               0/1     ContainerStatusUnknown        1                 72d
+airflow           airflow-api-server-5d9b85bc95-smmh5                               0/1     ContainerStatusUnknown        4                 72d
+airflow           airflow-api-server-5d9b85bc95-sqb8q                               0/1     ContainerStatusUnknown        6 (72d ago)       72d
+airflow           airflow-api-server-5d9b85bc95-wvd56                               0/1     ContainerStatusUnknown        19 (73d ago)      73d
+airflow           airflow-api-server-5d9b85bc95-xwzrm                               0/1     Init:ContainerStatusUnknown   0                 75d
+airflow           airflow-api-server-5d9b85bc95-xxjjm                               0/1     ContainerStatusUnknown        1 (72d ago)       72d
+airflow           airflow-dag-processor-676dbb66fb-29gtq                            0/2     ContainerStatusUnknown        3 (72d ago)       72d
+airflow           airflow-dag-processor-676dbb66fb-6mjdp                            0/2     ContainerStatusUnknown        2                 73d
+airflow           airflow-dag-processor-676dbb66fb-7vbvk                            0/2     ContainerStatusUnknown        2                 73d
+airflow           airflow-dag-processor-676dbb66fb-7vltv                            0/2     Init:ContainerStatusUnknown   0                 75d
+airflow           airflow-dag-processor-676dbb66fb-b4t8s                            0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-dag-processor-676dbb66fb-gbvpb                            0/2     Init:ContainerStatusUnknown   0                 72d
+airflow           airflow-dag-processor-676dbb66fb-hqmwn                            0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-dag-processor-676dbb66fb-j5tt7                            0/2     Init:ContainerStatusUnknown   0                 75d
+airflow           airflow-dag-processor-676dbb66fb-k5lbk                            0/2     ContainerStatusUnknown        2 (72d ago)       73d
+airflow           airflow-dag-processor-676dbb66fb-kjjnf                            0/2     ContainerStatusUnknown        2                 74d
+airflow           airflow-dag-processor-676dbb66fb-ml2ms                            0/2     ContainerStatusUnknown        2 (73d ago)       73d
+airflow           airflow-dag-processor-676dbb66fb-pnjnr                            0/2     Init:ContainerStatusUnknown   0                 101d
+airflow           airflow-dag-processor-676dbb66fb-rhcpr                            0/2     Init:ContainerStatusUnknown   0                 74d
+airflow           airflow-dag-processor-676dbb66fb-trghj                            0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-dag-processor-676dbb66fb-x8h6b                            0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-dag-processor-676dbb66fb-z4sxk                            0/2     ContainerStatusUnknown        2                 73d
+airflow           airflow-dag-processor-676dbb66fb-zv6fh                            0/2     ContainerStatusUnknown        114 (73d ago)     74d
+airflow           airflow-scheduler-6d494959dd-2vfss                                0/2     ContainerStatusUnknown        2 (74d ago)       74d
+airflow           airflow-scheduler-6d494959dd-6zv9d                                0/2     ContainerStatusUnknown        2                 73d
+airflow           airflow-scheduler-6d494959dd-cs59q                                0/2     Init:ContainerStatusUnknown   0                 75d
+airflow           airflow-scheduler-6d494959dd-fl7nf                                0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-scheduler-6d494959dd-fm7cp                                0/2     ContainerStatusUnknown        125 (73d ago)     74d
+airflow           airflow-scheduler-6d494959dd-fxrbd                                0/2     ContainerStatusUnknown        4 (72d ago)       72d
+airflow           airflow-scheduler-6d494959dd-jk244                                0/2     ContainerStatusUnknown        10 (72d ago)      73d
+airflow           airflow-scheduler-6d494959dd-lmwct                                0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-scheduler-6d494959dd-q9mw8                                0/2     ContainerStatusUnknown        2 (73d ago)       73d
+airflow           airflow-scheduler-6d494959dd-qpsfh                                0/2     Init:ContainerStatusUnknown   0                 74d
+airflow           airflow-scheduler-6d494959dd-rqt8n                                0/2     Init:ContainerStatusUnknown   0                 75d
+airflow           airflow-scheduler-6d494959dd-rvvhp                                0/2     ContainerStatusUnknown        2 (73d ago)       73d
+airflow           airflow-scheduler-6d494959dd-vmffn                                0/2     ContainerStatusUnknown        2 (72d ago)       72d
+airflow           airflow-scheduler-6d494959dd-xjltg                                0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-scheduler-6d494959dd-xxf4q                                0/2     Init:ContainerStatusUnknown   0                 101d
+airflow           airflow-scheduler-6d494959dd-xxk4w                                0/2     ContainerStatusUnknown        2                 73d
+airflow           airflow-scheduler-6d494959dd-zf66l                                0/2     Init:ContainerStatusUnknown   0                 72d
+airflow           airflow-statsd-6b767c9c7-jsm48                                    0/1     ContainerStatusUnknown        1                 74d
+airflow           airflow-triggerer-76d644d469-4crst                                0/2     ContainerStatusUnknown        2                 73d
+airflow           airflow-triggerer-76d644d469-5rrvx                                0/2     ContainerStatusUnknown        2                 73d
+airflow           airflow-triggerer-76d644d469-6zd5n                                0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-triggerer-76d644d469-c9c6g                                0/2     ContainerStatusUnknown        2                 73d
+airflow           airflow-triggerer-76d644d469-d8b77                                0/2     ContainerStatusUnknown        67 (73d ago)      74d
+airflow           airflow-triggerer-76d644d469-lcf46                                0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-triggerer-76d644d469-m4khh                                0/2     Init:ContainerStatusUnknown   0                 101d
+airflow           airflow-triggerer-76d644d469-qw7w4                                0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-triggerer-76d644d469-rdnkk                                0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-triggerer-76d644d469-sgt5x                                0/2     Init:ContainerStatusUnknown   0                 74d
+airflow           airflow-triggerer-76d644d469-srwz6                                0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-triggerer-76d644d469-th24h                                0/2     Init:ContainerStatusUnknown   0                 75d
+airflow           airflow-triggerer-76d644d469-v5pc8                                0/2     Init:ContainerStatusUnknown   0                 75d
+airflow           airflow-triggerer-76d644d469-vl6fm                                0/2     ContainerStatusUnknown        2                 74d
+airflow           airflow-triggerer-76d644d469-vm8cs                                0/2     ContainerStatusUnknown        2                 72d
+airflow           airflow-triggerer-76d644d469-whgtj                                0/2     ContainerStatusUnknown        2                 73d
+airflow           airflow-triggerer-76d644d469-zr6zh                                0/2     ContainerStatusUnknown        2                 73d
+default           nessie-77f5f7799b-lvxm2                                           0/1     Error                         0                 60d
+default           superset-74b47cb65c-fbhpr                                         0/1     ContainerStatusUnknown        1                 53d
+default           superset-74b47cb65c-lg8dc                                         0/1     Init:ContainerStatusUnknown   0                 51d
+default           superset-74b47cb65c-mcfsc                                         0/1     Init:ContainerStatusUnknown   0                 53d
+default           superset-worker-d7bf7878b-6rnwn                                   0/1     Init:ContainerStatusUnknown   0                 53d
+default           superset-worker-d7bf7878b-76t5v                                   0/1     Init:ContainerStatusUnknown   0                 51d
+default           trino-coordinator-74b8bf4858-4zssk                                0/1     ContainerStatusUnknown        1                 59d
+flink             flink-kubernetes-operator-6558b66dcb-4mp4s                        0/1     ContainerStatusUnknown        0                 74d
+flink             flink-kubernetes-operator-6558b66dcb-ggwsm                        0/1     ContainerStatusUnknown        1                 73d
+flink             flink-kubernetes-operator-6558b66dcb-hxlvw                        0/1     ContainerStatusUnknown        1                 74d
+flink             flink-kubernetes-operator-6558b66dcb-js6zl                        0/1     ContainerStatusUnknown        1                 72d
+flink             flink-kubernetes-operator-6558b66dcb-lv5lq                        0/1     ContainerStatusUnknown        0                 72d
+flink             flink-kubernetes-operator-6558b66dcb-q47s8                        0/1     ContainerStatusUnknown        1                 72d
+flink             flink-kubernetes-operator-6558b66dcb-qmjs6                        0/1     ContainerStatusUnknown        1                 72d
+flink             flink-kubernetes-operator-6558b66dcb-qpxgs                        0/1     ContainerStatusUnknown        1                 73d
+flink             flink-kubernetes-operator-6558b66dcb-rwdd6                        0/1     ContainerStatusUnknown        0                 102d
+flink             flink-kubernetes-operator-6558b66dcb-t9j8h                        0/1     Error                         0                 74d
+flink             flink-kubernetes-operator-6558b66dcb-x8p9b                        0/1     ContainerStatusUnknown        0                 75d
+flink             kafka-to-iceberg-demo-84f7cc55c9-2crbq                            0/1     ContainerStatusUnknown        0                 72d
+flink             kafka-to-iceberg-demo-84f7cc55c9-57ccs                            0/1     ContainerStatusUnknown        0                 73d
+flink             kafka-to-iceberg-demo-84f7cc55c9-66fjd                            0/1     ContainerStatusUnknown        0                 75d
+flink             kafka-to-iceberg-demo-84f7cc55c9-77nv8                            0/1     ContainerStatusUnknown        0                 72d
+flink             kafka-to-iceberg-demo-84f7cc55c9-7crxh                            0/1     ContainerStatusUnknown        0                 72d
+flink             kafka-to-iceberg-demo-84f7cc55c9-9gmg8                            0/1     ContainerStatusUnknown        0                 74d
+flink             kafka-to-iceberg-demo-84f7cc55c9-bwv4n                            0/1     ContainerStatusUnknown        0                 72d
+flink             kafka-to-iceberg-demo-84f7cc55c9-ct7gf                            0/1     ContainerStatusUnknown        0                 73d
+flink             kafka-to-iceberg-demo-84f7cc55c9-d6v9t                            0/1     ContainerStatusUnknown        0                 72d
+flink             kafka-to-iceberg-demo-84f7cc55c9-klm9d                            0/1     ContainerStatusUnknown        0                 75d
+flink             kafka-to-iceberg-demo-84f7cc55c9-lbvsb                            0/1     ContainerStatusUnknown        0                 73d
+flink             kafka-to-iceberg-demo-84f7cc55c9-r9gph                            0/1     ContainerStatusUnknown        0                 74d
+flink             kafka-to-iceberg-demo-84f7cc55c9-stkbs                            0/1     ContainerStatusUnknown        0                 74d
+flink             kafka-to-iceberg-demo-84f7cc55c9-ttwm5                            0/1     ContainerStatusUnknown        0                 72d
+flink             kafka-to-iceberg-demo-84f7cc55c9-v794m                            0/1     ContainerStatusUnknown        0                 73d
+flink             kafka-to-iceberg-demo-84f7cc55c9-x9c82                            0/1     ContainerStatusUnknown        0                 102d
+flink             kafka-to-iceberg-demo-84f7cc55c9-zsbp9                            0/1     ContainerStatusUnknown        0                 73d
+flink             sample-statemachine-7fcb495fd4-48ch7                              0/1     ContainerStatusUnknown        1                 73d
+flink             sample-statemachine-7fcb495fd4-7jv77                              0/1     ContainerStatusUnknown        1                 72d
+flink             sample-statemachine-7fcb495fd4-86zbk                              0/1     ContainerStatusUnknown        1                 72d
+flink             sample-statemachine-7fcb495fd4-9zbkv                              0/1     ContainerStatusUnknown        1                 74d
+flink             sample-statemachine-7fcb495fd4-bt42s                              0/1     ContainerStatusUnknown        1                 73d
+flink             sample-statemachine-7fcb495fd4-cp6b2                              0/1     Error                         0                 72d
+flink             sample-statemachine-7fcb495fd4-dsw9s                              0/1     ContainerStatusUnknown        0                 75d
+flink             sample-statemachine-7fcb495fd4-f299n                              0/1     ContainerStatusUnknown        1                 74d
+flink             sample-statemachine-7fcb495fd4-hnlgl                              0/1     Unknown                       0                 74d
+flink             sample-statemachine-7fcb495fd4-nrb44                              0/1     ContainerStatusUnknown        0                 72d
+flink             sample-statemachine-7fcb495fd4-sk4nt                              0/1     ContainerStatusUnknown        0                 75d
+flink             sample-statemachine-7fcb495fd4-tz5zq                              0/1     ContainerStatusUnknown        0                 95d
+flink             sample-statemachine-7fcb495fd4-vhjd9                              0/1     ContainerStatusUnknown        1                 72d
+flink             sample-statemachine-7fcb495fd4-wcr7p                              0/1     ContainerStatusUnknown        1                 72d
+flink             sample-statemachine-7fcb495fd4-wsnv8                              0/1     ContainerStatusUnknown        1                 73d
+flink             sample-statemachine-7fcb495fd4-xk8w2                              0/1     ContainerStatusUnknown        1                 73d
+flink             sample-statemachine-7fcb495fd4-zpv72                              0/1     ContainerStatusUnknown        1                 73d
+flink             sample-statemachine-taskmanager-16-1                              0/1     Error                         0                 72d
+monitoring        control-tower-daily-digest-29837220-27tbj                         0/1     ContainerStatusUnknown        0                 56d
+monitoring        control-tower-daily-digest-29837220-66rhz                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29837220-8wpxj                         0/1     ContainerStatusUnknown        0                 56d
+monitoring        control-tower-daily-digest-29837220-dzh44                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29837220-h7k8t                         0/1     ErrImageNeverPull             0                 50d
+monitoring        control-tower-daily-digest-29837220-vknqs                         0/1     ContainerStatusUnknown        0                 51d
+monitoring        control-tower-daily-digest-29838660-5xtwc                         0/1     ErrImageNeverPull             0                 50d
+monitoring        control-tower-daily-digest-29838660-6j9qc                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29838660-7rj5p                         0/1     ContainerStatusUnknown        0                 51d
+monitoring        control-tower-daily-digest-29838660-mnnr4                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29838660-ppj7f                         0/1     ContainerStatusUnknown        0                 56d
+monitoring        control-tower-daily-digest-29838660-xbszg                         0/1     ContainerStatusUnknown        0                 56d
+monitoring        control-tower-daily-digest-29840100-2mwfn                         0/1     ContainerStatusUnknown        0                 56d
+monitoring        control-tower-daily-digest-29840100-c6m2x                         0/1     ContainerStatusUnknown        0                 56d
+monitoring        control-tower-daily-digest-29840100-cskkr                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29840100-l7mfh                         0/1     ContainerStatusUnknown        0                 51d
+monitoring        control-tower-daily-digest-29840100-lj2x9                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29840100-tv8kb                         0/1     ErrImageNeverPull             0                 50d
+monitoring        control-tower-daily-digest-29841540-hqrrw                         0/1     ErrImageNeverPull             0                 50d
+monitoring        control-tower-daily-digest-29841540-m5mnx                         0/1     ContainerStatusUnknown        0                 51d
+monitoring        control-tower-daily-digest-29841540-p4285                         0/1     ContainerStatusUnknown        0                 55d
+monitoring        control-tower-daily-digest-29841540-vcm89                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29841540-wtdsh                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29842980-4lgrk                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29842980-dzxzj                         0/1     ContainerStatusUnknown        0                 51d
+monitoring        control-tower-daily-digest-29842980-fjq7h                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29842980-mdk2n                         0/1     ErrImageNeverPull             0                 50d
+monitoring        control-tower-daily-digest-29842980-rdbs4                         0/1     ContainerStatusUnknown        0                 54d
+monitoring        control-tower-daily-digest-29844420-9sfhv                         0/1     ContainerStatusUnknown        0                 51d
+monitoring        control-tower-daily-digest-29844420-cwjzv                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29844420-d5ldm                         0/1     ErrImageNeverPull             0                 50d
+monitoring        control-tower-daily-digest-29844420-lqx5l                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29844420-p5m8z                         0/1     ContainerStatusUnknown        0                 53d
+monitoring        control-tower-daily-digest-29845860-828dr                         0/1     ContainerStatusUnknown        0                 52d
+monitoring        control-tower-daily-digest-29845860-9fcxm                         0/1     ErrImageNeverPull             0                 50d
+monitoring        control-tower-daily-digest-29845860-pnxt9                         0/1     ContainerStatusUnknown        0                 51d
+monitoring        control-tower-daily-digest-29847300-6njwf                         0/1     ContainerStatusUnknown        0                 51d
+monitoring        control-tower-daily-digest-29847300-kdfs7                         0/1     ErrImageNeverPull             0                 50d
+monitoring        control-tower-daily-digest-29847300-qkjdn                         0/1     ContainerStatusUnknown        0                 51d
+monitoring        control-tower-daily-digest-29848740-hmgwj                         0/1     ContainerStatusUnknown        0                 50d
+monitoring        control-tower-daily-digest-29848740-kwslf                         0/1     ErrImageNeverPull             0                 50d
+monitoring        control-tower-daily-digest-29913540-6v9cx                         0/1     ErrImageNeverPull             0                 4d22h
+monitoring        control-tower-daily-digest-29914980-qqbgd                         0/1     ErrImageNeverPull             0                 4d22h
+monitoring        control-tower-daily-digest-29916420-ljm9b                         0/1     ErrImageNeverPull             0                 3d22h
+monitoring        control-tower-daily-digest-29917860-6hjs6                         0/1     ErrImageNeverPull             0                 2d22h
+monitoring        control-tower-daily-digest-29919300-xnbwz                         0/1     ErrImageNeverPull             0                 46h
+monitoring        control-tower-daily-digest-29920740-tnfgb                         0/1     ErrImageNeverPull             0                 22h
+monitoring        trino-audit-shim-5f96d96f95-qdds7                                 0/1     ContainerStatusUnknown        1                 60d
+ranger            ranger-apache-ranger-756f8d5c6-426gz                              0/1     Error                         0                 53d
+ranger            ranger-apache-ranger-756f8d5c6-cv8ff                              0/1     ContainerStatusUnknown        1                 59d
+spark-operator    spark-operator-controller-586548d44d-x7t6x                        0/1     ContainerStatusUnknown        1                 56d

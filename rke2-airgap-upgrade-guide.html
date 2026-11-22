@@ -1,0 +1,1103 @@
+<!doctype html>
+<title>RKE2 Airgap Upgrade Guide</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky nav sidebar + scrollable main content */
+:root {
+  --bg:        #0f1117;
+  --surface:   #191d27;
+  --border:    #252a38;
+  --border-hi: #2f3650;
+  --text:      #d4d8e8;
+  --muted:     #7a84a3;
+  --heading:   #edf0fb;
+  --accent:    #4f9cf7;
+  --accent-hi: #7ab8ff;
+  --green:     #3ecf8e;
+  --amber:     #f4a24b;
+  --red:       #f26472;
+  --code-bg:   #141720;
+  color-scheme: dark;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:        #f4f6fb;
+    --surface:   #ffffff;
+    --border:    #dde2f0;
+    --border-hi: #c8d0e8;
+    --text:      #2a3050;
+    --muted:     #6b7599;
+    --heading:   #111828;
+    --accent:    #1a6ed8;
+    --accent-hi: #0f52a8;
+    --green:     #157a52;
+    --amber:     #a86210;
+    --red:       #c72536;
+    --code-bg:   #edf0f9;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg:        #f4f6fb;
+  --surface:   #ffffff;
+  --border:    #dde2f0;
+  --border-hi: #c8d0e8;
+  --text:      #2a3050;
+  --muted:     #6b7599;
+  --heading:   #111828;
+  --accent:    #1a6ed8;
+  --accent-hi: #0f52a8;
+  --green:     #157a52;
+  --amber:     #a86210;
+  --red:       #c72536;
+  --code-bg:   #edf0f9;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; min-height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* Nav */
+.site-nav {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 0;
+  bottom: 0;
+  width: 240px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 24px 0 32px;
+  z-index: 10;
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.nav-logo-mark {
+  width: 28px;
+  height: 28px;
+  background: var(--accent);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.nav-logo-mark svg { width: 16px; height: 16px; fill: #fff; }
+.nav-logo-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--heading);
+  line-height: 1.2;
+}
+.nav-logo-sub { font-size: 10px; color: var(--muted); font-family: 'Inter', sans-serif; font-weight: 400; }
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 20px 4px;
+}
+.nav-link {
+  display: block;
+  padding: 5px 20px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.5;
+  border-left: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.nav-link:hover { color: var(--heading); }
+.nav-link.active { color: var(--accent); border-left-color: var(--accent); }
+.nav-link.sub { padding-left: 32px; font-size: 12px; }
+
+/* Main */
+.main {
+  margin-left: 240px;
+  padding: 40px max(24px, env(safe-area-inset-right, 0px)) 80px max(32px, env(safe-area-inset-left, 0px));
+  max-width: 900px;
+}
+
+/* Page header */
+.page-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 24px;
+  margin-bottom: 36px;
+}
+.page-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.page-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--heading);
+  margin: 0 0 10px;
+  text-wrap: balance;
+  line-height: 1.25;
+}
+.page-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--muted);
+  align-items: center;
+}
+.meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.badge-green { color: var(--green); border-color: var(--green); }
+.badge-amber { color: var(--amber); border-color: var(--amber); }
+.badge-red   { color: var(--red);   border-color: var(--red); }
+
+/* Sections */
+.section { margin-bottom: 48px; scroll-margin-top: 24px; }
+h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--heading);
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  text-wrap: balance;
+}
+h2 .section-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 8px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--heading);
+  margin: 24px 0 10px;
+}
+p { margin: 0 0 14px; }
+ul, ol { margin: 0 0 14px; padding-left: 20px; }
+li { margin-bottom: 5px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hi); text-decoration: underline; }
+
+/* Code */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--accent-hi);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow-x: auto;
+  padding: 16px 18px;
+  margin: 14px 0 20px;
+  position: relative;
+}
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+.pre-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+/* Callout boxes */
+.callout {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid;
+  margin: 16px 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.callout-icon { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+.callout-body { flex: 1; min-width: 0; }
+.callout-body strong { font-weight: 600; display: block; margin-bottom: 2px; }
+.callout.warn  { background: color-mix(in srgb, var(--amber) 8%, var(--bg)); border-color: color-mix(in srgb, var(--amber) 30%, var(--border)); }
+.callout.info  { background: color-mix(in srgb, var(--accent) 8%, var(--bg)); border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); }
+.callout.crit  { background: color-mix(in srgb, var(--red) 8%, var(--bg)); border-color: color-mix(in srgb, var(--red) 30%, var(--border)); }
+.callout.ok    { background: color-mix(in srgb, var(--green) 8%, var(--bg)); border-color: color-mix(in srgb, var(--green) 30%, var(--border)); }
+
+/* Step list */
+.step-list { list-style: none; padding: 0; margin: 0 0 20px; counter-reset: step; }
+.step-list li {
+  counter-increment: step;
+  display: flex;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  margin: 0;
+  align-items: flex-start;
+}
+.step-list li::before {
+  content: counter(step);
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-top: 1px;
+}
+
+/* Version path table */
+.upgrade-path {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+.vbadge {
+  background: var(--code-bg);
+  border: 1px solid var(--border-hi);
+  border-radius: 4px;
+  padding: 3px 10px;
+  color: var(--heading);
+}
+.vbadge.current { border-color: var(--red); color: var(--red); }
+.vbadge.target  { border-color: var(--green); color: var(--green); }
+.vbadge.inter   { opacity: .7; }
+.varrow { color: var(--muted); }
+
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+.data-table th {
+  text-align: left;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.data-table td code { font-size: 11.5px; }
+.data-table tr:last-child td { border-bottom: none; }
+
+/* Checklist */
+.check-list { list-style: none; padding: 0; margin: 0 0 16px; }
+.check-list li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  margin: 0;
+}
+.check-list li:last-child { border-bottom: none; }
+.check-list li::before {
+  content: "☐";
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .site-nav { display: none; }
+  .main { margin-left: 0; padding: 24px max(16px, env(safe-area-inset-right, 0px)) 60px max(16px, env(safe-area-inset-left, 0px)); }
+  .page-title { font-size: 20px; }
+  .upgrade-path { gap: 4px; font-size: 11px; }
+}
+</style>
+
+<nav class="site-nav" aria-label="Guide navigation">
+  <div class="nav-logo">
+    <div class="nav-logo-mark">
+      <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="5" height="5" rx="1"/>
+        <rect x="9" y="2" width="5" height="5" rx="1"/>
+        <rect x="2" y="9" width="5" height="5" rx="1"/>
+        <rect x="9" y="9" width="5" height="5" rx="1"/>
+      </svg>
+    </div>
+    <div>
+      <div class="nav-logo-text">RKE2 Upgrade</div>
+      <div class="nav-logo-sub">Airgap Guide</div>
+    </div>
+  </div>
+
+  <div class="nav-section-label">Overview</div>
+  <a href="#overview" class="nav-link active">Introduction</a>
+  <a href="#upgrade-path" class="nav-link">Upgrade Path</a>
+  <a href="#architecture" class="nav-link">Cluster Architecture</a>
+
+  <div class="nav-section-label">Preparation</div>
+  <a href="#prerequisites" class="nav-link">Prerequisites</a>
+  <a href="#download-artifacts" class="nav-link">Download Artifacts</a>
+  <a href="#transfer" class="nav-link">Transfer to Airgap</a>
+  <a href="#backup" class="nav-link">Backup &amp; Snapshot</a>
+
+  <div class="nav-section-label">Upgrade Procedure</div>
+  <a href="#server-upgrade" class="nav-link">Server Node</a>
+  <a href="#agent-upgrade" class="nav-link">Agent Nodes</a>
+  <a href="#component-verification" class="nav-link">Verification</a>
+
+  <div class="nav-section-label">Post-Upgrade</div>
+  <a href="#custom-images" class="nav-link">Custom Images</a>
+  <a href="#disk-cleanup" class="nav-link">Disk Cleanup</a>
+  <a href="#rollback" class="nav-link">Rollback</a>
+  <a href="#troubleshooting" class="nav-link">Troubleshooting</a>
+
+  <div class="nav-section-label">Reference</div>
+  <a href="#checklist" class="nav-link">Full Checklist</a>
+  <a href="#artifact-list" class="nav-link">Artifact List</a>
+</nav>
+
+<main class="main">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-eyebrow">Operations Runbook</div>
+    <h1 class="page-title">RKE2 Airgap Cluster Upgrade Guide</h1>
+    <div class="page-meta">
+      <span class="meta-badge badge-green">✓ Verified on v1.27 → v1.32</span>
+      <span class="meta-badge badge-amber">⚠ One-minor-version increments only</span>
+      <span class="meta-badge">Ubuntu 24.04 · RKE2</span>
+    </div>
+  </div>
+
+  <!-- Overview -->
+  <section class="section" id="overview">
+    <h2><span class="section-num">1</span>Introduction</h2>
+    <p>This guide covers in-place upgrades of an RKE2 cluster in an <strong>airgap (internet-isolated) environment</strong>. All binary tarballs, container images, and checksums must be downloaded on an internet-connected machine and transferred to the airgap environment before beginning the upgrade.</p>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠</span>
+      <div class="callout-body">
+        <strong>One minor version at a time</strong>
+        Kubernetes and RKE2 do not support skipping minor versions during an upgrade. You must upgrade sequentially: <code>1.27 → 1.28 → 1.29 → … → target</code>. Attempting to jump multiple minor versions will fail or corrupt etcd state.
+      </div>
+    </div>
+
+    <div class="callout crit">
+      <span class="callout-icon">🛑</span>
+      <div class="callout-body">
+        <strong>Disk space: minimum 20 GB free before starting</strong>
+        Each upgrade step extracts ~300 MB into <code>/var/lib/rancher/rke2/data/</code>. With 5 intermediate steps this totals ~1.5 GB. If disk usage exceeds the kubelet's eviction threshold (<code>nodefs.available &lt; 5%</code>), the node will be tainted <code>NoSchedule</code> and pods will not reschedule. Clean up unused images and old RKE2 data directories before upgrading.
+      </div>
+    </div>
+  </section>
+
+  <!-- Upgrade Path -->
+  <section class="section" id="upgrade-path">
+    <h2><span class="section-num">2</span>Upgrade Path</h2>
+    <p>This cluster was upgraded from <strong>v1.27.13</strong> to <strong>v1.32.13</strong> in five sequential steps. Use the same path for any cluster on 1.27.</p>
+
+    <div class="upgrade-path">
+      <span class="vbadge current">v1.27.13+rke2r1</span>
+      <span class="varrow">→</span>
+      <span class="vbadge inter">v1.28.9+rke2r1</span>
+      <span class="varrow">→</span>
+      <span class="vbadge inter">v1.29.9+rke2r1</span>
+      <span class="varrow">→</span>
+      <span class="vbadge inter">v1.30.9+rke2r1</span>
+      <span class="varrow">→</span>
+      <span class="vbadge inter">v1.31.9+rke2r1</span>
+      <span class="varrow">→</span>
+      <span class="vbadge target">v1.32.13+rke2r1</span>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Version</th>
+          <th>Release Date</th>
+          <th>EOL</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>v1.27.x</code></td><td>Apr 2023</td><td>Jun 2024</td><td style="color:var(--red)">EOL – do not stay here</td></tr>
+        <tr><td><code>v1.28.x</code></td><td>Aug 2023</td><td>Oct 2024</td><td style="color:var(--amber)">Intermediate only</td></tr>
+        <tr><td><code>v1.29.x</code></td><td>Dec 2023</td><td>Feb 2025</td><td style="color:var(--amber)">Intermediate only</td></tr>
+        <tr><td><code>v1.30.x</code></td><td>Apr 2024</td><td>Jun 2025</td><td style="color:var(--amber)">Intermediate only</td></tr>
+        <tr><td><code>v1.31.x</code></td><td>Aug 2024</td><td>Oct 2025</td><td style="color:var(--amber)">Intermediate only</td></tr>
+        <tr><td><code>v1.32.x</code></td><td>Dec 2024</td><td>Feb 2026</td><td style="color:var(--green)">✓ Target – stable LTS</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Architecture -->
+  <section class="section" id="architecture">
+    <h2><span class="section-num">3</span>Cluster Architecture</h2>
+    <p>An RKE2 cluster has two node roles. This guide covers upgrading both.</p>
+
+    <table class="data-table">
+      <thead>
+        <tr><th>Role</th><th>Systemd Service</th><th>Config Path</th><th>What it runs</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Server node</strong><br><span style="color:var(--muted);font-size:12px">control-plane + etcd</span></td>
+          <td><code>rke2-server</code></td>
+          <td><code>/etc/rancher/rke2/config.yaml</code></td>
+          <td>API server, controller manager, scheduler, etcd, kubelet, Canal CNI</td>
+        </tr>
+        <tr>
+          <td><strong>Agent node</strong><br><span style="color:var(--muted);font-size:12px">worker only</span></td>
+          <td><code>rke2-agent</code></td>
+          <td><code>/etc/rancher/rke2/config.yaml</code></td>
+          <td>kubelet, kube-proxy, containerd, Canal CNI</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ</span>
+      <div class="callout-body">
+        <strong>Upgrade order: server first, agents after</strong>
+        Always upgrade the server node(s) before agent nodes. The Kubernetes API server must be at the target version before worker kubelets are upgraded. In a multi-server HA setup, upgrade one server at a time and verify it rejoins the cluster before upgrading the next.
+      </div>
+    </div>
+  </section>
+
+  <!-- Prerequisites -->
+  <section class="section" id="prerequisites">
+    <h2><span class="section-num">4</span>Prerequisites</h2>
+    <p>Confirm all items below on the <strong>internet-connected download machine</strong> and the <strong>target airgap node</strong> before downloading artifacts.</p>
+
+    <h3>On the airgap node — verify before starting</h3>
+    <ul class="check-list">
+      <li>Free disk space on <code>/</code> is at least 20 GB (<code>df -h /</code>)</li>
+      <li>Current cluster is healthy: <code>kubectl get nodes</code> shows all nodes <code>Ready</code></li>
+      <li>No node taints blocking scheduling: <code>kubectl describe node &lt;name&gt; | grep Taint</code></li>
+      <li>etcd snapshot taken within the last hour (see <a href="#backup">section 7</a>)</li>
+      <li>All custom container images saved as tar archives and confirmed present</li>
+      <li>No active Kubernetes upgrade jobs or pending evictions</li>
+    </ul>
+
+    <h3>On the download machine</h3>
+    <ul class="check-list">
+      <li>Internet access to <code>github.com</code> and GitHub release CDN</li>
+      <li>Sufficient disk space for all upgrade tarballs (~350 MB × number of steps)</li>
+      <li><code>curl</code>, <code>sha256sum</code>, and <code>scp</code> or equivalent transfer tool available</li>
+      <li>Target RKE2 version confirmed available on GitHub Releases</li>
+    </ul>
+  </section>
+
+  <!-- Download Artifacts -->
+  <section class="section" id="download-artifacts">
+    <h2><span class="section-num">5</span>Download Artifacts (internet-connected machine)</h2>
+    <p>For each version in the upgrade path, download the RKE2 tarball, its checksum file, and the install script. Store each in its own directory.</p>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ</span>
+      <div class="callout-body">
+        <strong>Container images are already embedded</strong>
+        The RKE2 tarball includes all required system component images (etcd, CoreDNS, Canal, metrics-server, ingress-nginx, snapshot-controller) as tar files in <code>./share/rke2/agent/images/</code>. No separate image pull is needed for system components. Only your custom application images need to be handled separately (see <a href="#custom-images">section 12</a>).
+      </div>
+    </div>
+
+    <div class="pre-label">Download script — run on the internet-connected machine</div>
+<pre><code>#!/bin/bash
+# Run on the internet-connected download machine
+
+RKE2_VERSIONS=(
+  "v1.28.9+rke2r1"
+  "v1.29.9+rke2r1"
+  "v1.30.9+rke2r1"
+  "v1.31.9+rke2r1"
+  "v1.32.13+rke2r1"
+)
+
+DOWNLOAD_DIR="./rke2-airgap-upgrade"
+mkdir -p "$DOWNLOAD_DIR"
+
+# Download the install script once
+curl -sL https://get.rke2.io -o "$DOWNLOAD_DIR/install.sh"
+chmod +x "$DOWNLOAD_DIR/install.sh"
+
+for VERSION in "${RKE2_VERSIONS[@]}"; do
+  ENCODED=$(echo "$VERSION" | sed 's/+/%2B/')
+  DIR="$DOWNLOAD_DIR/$VERSION"
+  mkdir -p "$DIR"
+  echo "=== Downloading $VERSION ==="
+
+  # Tarball
+  curl -L --progress-bar \
+    "https://github.com/rancher/rke2/releases/download/${ENCODED}/rke2.linux-amd64.tar.gz" \
+    -o "$DIR/rke2.linux-amd64.tar.gz"
+
+  # Checksum
+  curl -sL \
+    "https://github.com/rancher/rke2/releases/download/${ENCODED}/sha256sum-amd64.txt" \
+    -o "$DIR/sha256sum-amd64.txt"
+
+  # Verify download integrity
+  cd "$DIR"
+  sha256sum -c sha256sum-amd64.txt --ignore-missing 2>&1 | grep -E "OK|FAILED"
+  cd - &gt;/dev/null
+done
+
+echo ""
+echo "Downloaded $(du -sh $DOWNLOAD_DIR | cut -f1) total"
+echo "Files ready in: $DOWNLOAD_DIR/"</code></pre>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠</span>
+      <div class="callout-body">
+        <strong>Always verify checksums before transferring</strong>
+        A corrupted tarball will silently install a broken binary. The <code>sha256sum -c</code> check above must show <code>rke2.linux-amd64.tar.gz: OK</code> for every version before you proceed.
+      </div>
+    </div>
+  </section>
+
+  <!-- Transfer -->
+  <section class="section" id="transfer">
+    <h2><span class="section-num">6</span>Transfer Artifacts to Airgap Environment</h2>
+    <p>Use your organization's standard file transfer method (SCP, USB, shared NFS mount, S3-compatible store with one-way sync, etc.).</p>
+
+<pre><code># From the download machine — transfer the entire directory
+scp -r ./rke2-airgap-upgrade/ admin@&lt;airgap-server-ip&gt;:/root/rke2-upgrade/
+
+# Or, if using rsync:
+rsync -avz --progress ./rke2-airgap-upgrade/ admin@&lt;airgap-server-ip&gt;:/root/rke2-upgrade/</code></pre>
+
+    <p>On the airgap node, re-verify checksums after transfer to detect any corruption during transit:</p>
+<pre><code># On the airgap server node — verify after transfer
+for dir in /root/rke2-upgrade/v*/; do
+  echo "Verifying $(basename $dir) ..."
+  cd "$dir"
+  sha256sum -c sha256sum-amd64.txt --ignore-missing 2>&1 | grep -E "OK|FAILED"
+  cd - &gt;/dev/null
+done</code></pre>
+  </section>
+
+  <!-- Backup -->
+  <section class="section" id="backup">
+    <h2><span class="section-num">7</span>Backup &amp; etcd Snapshot</h2>
+    <p>Always take a fresh etcd snapshot immediately before upgrading. RKE2 stores automated snapshots in <code>/var/lib/rancher/rke2/server/db/snapshots/</code>; the command below takes a manual on-demand one.</p>
+
+<pre><code># Take a named snapshot before upgrading
+rke2 etcd-snapshot save --name pre-upgrade-$(date +%Y%m%d%H%M)
+
+# Verify the snapshot was created
+ls -lh /var/lib/rancher/rke2/server/db/snapshots/ | tail -5
+
+# Optional: copy to a safe location outside the cluster node
+scp /var/lib/rancher/rke2/server/db/snapshots/pre-upgrade-* \
+    backup-host:/backups/rke2-etcd/</code></pre>
+
+    <div class="callout ok">
+      <span class="callout-icon">✓</span>
+      <div class="callout-body">
+        <strong>RKE2 also takes automated snapshots every 12 hours</strong>
+        The five most recent snapshots are kept by default. The retention count is configurable via <code>etcd-snapshot-retention</code> in <code>/etc/rancher/rke2/config.yaml</code>.
+      </div>
+    </div>
+
+    <h3>Snapshot disk usage</h3>
+    <p>Each snapshot is roughly 10–50 MB depending on etcd data size. With the default retention of 5, this is negligible. If your etcd data is large (many CRDs, secrets, or long-lived clusters), consider temporarily setting retention to 2–3 before the upgrade to free space.</p>
+  </section>
+
+  <!-- Server Upgrade -->
+  <section class="section" id="server-upgrade">
+    <h2><span class="section-num">8</span>Server Node Upgrade Procedure</h2>
+    <p>Repeat this procedure for each version in the upgrade path. Do not skip versions.</p>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠</span>
+      <div class="callout-body">
+        <strong>Brief downtime expected</strong>
+        On a single-node cluster there is no way to avoid a control-plane outage during the restart. The API server will be unavailable for 30–90 seconds per step. Running workloads are unaffected if they don't depend on the API server.
+      </div>
+    </div>
+
+    <h3>Step-by-step for each version</h3>
+    <ol class="step-list">
+      <li>
+        <div>
+          <strong>Set the version variable</strong>
+          <pre><code>TARGET_VERSION="v1.28.9+rke2r1"   # Change per step</code></pre>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Install the new binary from the airgap tarball</strong>
+          <div class="pre-label">Offline install using local tarball</div>
+          <pre><code>INSTALL_RKE2_ARTIFACT_PATH="/root/rke2-upgrade/${TARGET_VERSION}" \
+  INSTALL_RKE2_VERSION="${TARGET_VERSION}" \
+  bash /root/rke2-upgrade/install.sh</code></pre>
+          <p style="font-size:12px;color:var(--muted);margin-top:6px">The <code>INSTALL_RKE2_ARTIFACT_PATH</code> variable tells the installer to use the local tarball instead of downloading from GitHub. The install script extracts the binary to <code>/usr/local/bin/rke2</code> and updates the systemd unit file.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Verify the binary version before restarting</strong>
+          <pre><code>rke2 --version | head -1
+# Expected: rke2 version v1.28.9+rke2r1 (...)</code></pre>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Restart the RKE2 server service</strong>
+          <pre><code>systemctl restart rke2-server</code></pre>
+          <p style="font-size:12px;color:var(--muted);margin-top:6px">The service will stop the old process, start the new binary, migrate etcd schema if needed, and restart system component pods. The first attempt may show a brief CRD registration error in journal logs — this is normal; systemd will retry and the service will succeed.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Wait for the service to become active</strong>
+          <pre><code>until systemctl is-active rke2-server &gt;/dev/null 2&gt;&amp;1 || \
+      systemctl is-failed rke2-server &gt;/dev/null 2&gt;&amp;1; do
+  sleep 5
+done
+systemctl is-active rke2-server &amp;&amp; echo "UP" || echo "FAILED"</code></pre>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Verify the node is Ready at the new version</strong>
+          <pre><code>kubectl get nodes
+# NAME   STATUS   ROLES                       AGE    VERSION
+# rag    Ready    control-plane,etcd,master   171d   v1.28.9+rke2r1</code></pre>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Wait for system pods to be Ready</strong>
+          <pre><code>kubectl rollout status -n kube-system daemonset/rke2-canal --timeout=120s
+kubectl rollout status -n kube-system deployment/rke2-coredns-rke2-coredns --timeout=120s
+kubectl rollout status -n kube-system deployment/rke2-metrics-server --timeout=120s</code></pre>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>Repeat from step 1 with the next version in the path</strong>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">Only proceed to the next minor version after the node shows <code>Ready</code> and all system pods are <code>Running</code>.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ</span>
+      <div class="callout-body">
+        <strong>If the service fails to start</strong>
+        Check journal logs: <code>journalctl -u rke2-server --since "2 minutes ago" --no-pager | grep -E "fatal|Error"</code>. Common causes: insufficient disk space, containerd socket not ready, or a CRD registration race condition (usually resolves on the next systemd retry within 10–30 s).
+      </div>
+    </div>
+  </section>
+
+  <!-- Agent Upgrade -->
+  <section class="section" id="agent-upgrade">
+    <h2><span class="section-num">9</span>Agent Node Upgrade Procedure</h2>
+    <p>Upgrade agent (worker) nodes <strong>after</strong> the server node has been fully upgraded to the target version. For each agent node, follow these steps.</p>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠</span>
+      <div class="callout-body">
+        <strong>Cordon and drain each agent before upgrading it</strong>
+        This moves workloads to other nodes and prevents new pods from being scheduled during the upgrade window. Skip this if you have only one agent node or if downtime is acceptable.
+      </div>
+    </div>
+
+<pre><code># From the server node — cordon and drain the agent
+AGENT_NODE="worker-01"   # Replace with your agent node name
+
+kubectl cordon "${AGENT_NODE}"
+kubectl drain "${AGENT_NODE}" \
+  --ignore-daemonsets \
+  --delete-emptydir-data \
+  --timeout=120s</code></pre>
+
+    <p>Then, on the <strong>agent node itself</strong>:</p>
+
+<pre><code># On the agent node — set variables
+TARGET_VERSION="v1.32.13+rke2r1"   # Must match server version
+
+# Install the new binary from the airgap tarball
+INSTALL_RKE2_ARTIFACT_PATH="/root/rke2-upgrade/${TARGET_VERSION}" \
+  INSTALL_RKE2_VERSION="${TARGET_VERSION}" \
+  INSTALL_RKE2_TYPE="agent" \
+  bash /root/rke2-upgrade/install.sh
+
+# Verify binary
+rke2 --version | head -1
+
+# Restart the agent service
+systemctl restart rke2-agent
+
+# Wait for it to become active
+until systemctl is-active rke2-agent &gt;/dev/null 2&gt;&amp;1 || \
+    systemctl is-failed rke2-agent &gt;/dev/null 2&gt;&amp;1; do sleep 5; done
+systemctl is-active rke2-agent &amp;&amp; echo "UP" || echo "FAILED"</code></pre>
+
+    <p>Back on the <strong>server node</strong>, verify the agent rejoined and uncordon it:</p>
+
+<pre><code># From the server — verify agent is Ready at new version
+kubectl get node "${AGENT_NODE}"
+# Expected: STATUS=Ready, VERSION=v1.32.13+rke2r1
+
+# Uncordon to allow scheduling
+kubectl uncordon "${AGENT_NODE}"</code></pre>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ</span>
+      <div class="callout-body">
+        <strong>Agent upgrades do not need to be sequential by minor version</strong>
+        Unlike the server node, agent nodes can jump directly to the final target version — as long as the server is already there. The kubelet version must be ≤ the API server version, so once the server is on 1.32 you may upgrade any agent directly to 1.32.
+      </div>
+    </div>
+  </section>
+
+  <!-- Verification -->
+  <section class="section" id="component-verification">
+    <h2><span class="section-num">10</span>Verification</h2>
+    <p>After completing all upgrade steps, run the following checks to confirm the cluster and all services are healthy.</p>
+
+<pre><code># 1. Cluster version and node state
+kubectl get nodes -o wide
+kubectl version
+
+# 2. All system pods running
+kubectl get pods -n kube-system
+
+# 3. All application pods by namespace
+kubectl get pods -A | grep -v "ContainerStatusUnknown\|Completed" \
+  | awk '$4!="Running" {print "PROBLEM: "$0}'
+
+# 4. PersistentVolumes still bound
+kubectl get pv,pvc -A | grep -v Bound
+
+# 5. Node has no problematic taints
+kubectl describe node | grep -E "Taint|DiskPressure|MemoryPressure"
+
+# 6. CoreDNS resolves inside the cluster
+kubectl run -it --rm dns-test --image=busybox --restart=Never -- \
+  nslookup kubernetes.default.svc.cluster.local</code></pre>
+
+    <h3>Expected service status after upgrade</h3>
+    <table class="data-table">
+      <thead><tr><th>Service</th><th>Namespace</th><th>Expected Status</th></tr></thead>
+      <tbody>
+        <tr><td>MinIO Operator + Pool</td><td><code>default</code></td><td style="color:var(--green)">Running</td></tr>
+        <tr><td>Nessie (Iceberg catalog)</td><td><code>default</code></td><td style="color:var(--green)">Running — may take 2–3 min on first start</td></tr>
+        <tr><td>Superset + PostgreSQL + Redis</td><td><code>default</code></td><td style="color:var(--green)">Running</td></tr>
+        <tr><td>Trino Coordinator + Worker</td><td><code>default</code></td><td style="color:var(--green)">Running</td></tr>
+        <tr><td>OpenSearch + Dashboards</td><td><code>logging</code></td><td style="color:var(--green)">Running</td></tr>
+        <tr><td>Loki + Fluent Bit</td><td><code>monitoring</code></td><td style="color:var(--green)">Running</td></tr>
+        <tr><td>Apache Ranger + PostgreSQL</td><td><code>ranger</code></td><td style="color:var(--green)">Running</td></tr>
+        <tr><td>Spark Operator</td><td><code>spark-operator</code></td><td style="color:var(--green)">Running</td></tr>
+        <tr><td>NFS Provisioner</td><td><code>nfs-provisioner</code></td><td style="color:var(--green)">Running</td></tr>
+        <tr><td>Canal CNI + CoreDNS</td><td><code>kube-system</code></td><td style="color:var(--green)">Running</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Custom Images -->
+  <section class="section" id="custom-images">
+    <h2><span class="section-num">11</span>Custom / Locally-Built Images</h2>
+    <p>The RKE2 upgrade replaces the containerd daemon (from 1.7.x to 2.x on the 1.27→1.32 path). This can evict locally-imported images from the containerd image store. Verify that all custom images are present <em>after</em> the upgrade and re-import any that are missing.</p>
+
+    <h3>Check which images are loaded</h3>
+<pre><code>/var/lib/rancher/rke2/bin/ctr \
+  --address /run/k3s/containerd/containerd.sock \
+  -n k8s.io images ls | grep -v "rancher\|k8s.gcr\|registry.k8s"</code></pre>
+
+    <h3>Re-import a missing image</h3>
+<pre><code># Import from a saved tar archive
+/var/lib/rancher/rke2/bin/ctr \
+  --address /run/k3s/containerd/containerd.sock \
+  -n k8s.io images import /path/to/image.tar
+
+# Verify it imported successfully
+/var/lib/rancher/rke2/bin/ctr \
+  --address /run/k3s/containerd/containerd.sock \
+  -n k8s.io images ls | grep your-image-name</code></pre>
+
+    <h3>After re-importing, restart the affected deployment</h3>
+<pre><code>kubectl rollout restart deployment/&lt;name&gt; -n &lt;namespace&gt;
+kubectl rollout status deployment/&lt;name&gt; -n &lt;namespace&gt;</code></pre>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠</span>
+      <div class="callout-body">
+        <strong>Keep image tar archives on persistent storage</strong>
+        Images loaded via <code>ctr images import</code> are not backed up by RKE2. Store the original tar files on durable storage (NFS share, object store, local disk outside the container runtime root). After any containerd version bump, re-verify and re-import all custom images.
+      </div>
+    </div>
+  </section>
+
+  <!-- Disk Cleanup -->
+  <section class="section" id="disk-cleanup">
+    <h2><span class="section-num">12</span>Post-Upgrade Disk Cleanup</h2>
+    <p>After the upgrade is fully verified, reclaim disk space by removing old RKE2 data directories and pruning unused container images.</p>
+
+    <h3>Remove old RKE2 data directories</h3>
+    <p>Each version leaves behind a directory in <code>/var/lib/rancher/rke2/data/</code>. Only the current version's directory is needed.</p>
+<pre><code># List all data directories
+ls /var/lib/rancher/rke2/data/
+
+# Remove all except the current version
+CURRENT=$(rke2 --version | awk '{print $3}' | sed 's/+/-/')
+for dir in /var/lib/rancher/rke2/data/*/; do
+  basename=$(basename "$dir")
+  if ! echo "$basename" | grep -q "$CURRENT"; then
+    echo "Removing old: $basename"
+    rm -rf "$dir"
+  fi
+done
+
+df -h /</code></pre>
+
+    <h3>Remove zombie pods</h3>
+    <p>Pods with status <code>ContainerStatusUnknown</code> are orphaned from before a node restart and consume no disk, but clutter <code>kubectl get pods</code> output. Remove them with:</p>
+<pre><code># Preview what will be deleted
+kubectl get pods -A --field-selector=status.phase=Failed
+
+# Delete Failed pods per namespace
+for ns in $(kubectl get ns -o name | cut -d/ -f2); do
+  kubectl delete pods -n "$ns" --field-selector=status.phase=Failed \
+    --force --grace-period=0 2&gt;/dev/null
+done</code></pre>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠</span>
+      <div class="callout-body">
+        <strong>Do not delete Completed Spark driver pods automatically</strong>
+        Spark driver pods in <code>Completed</code> state are referenced by SparkApplication resources for log retrieval. Delete them only after confirming no audit or log queries are pending.
+      </div>
+    </div>
+  </section>
+
+  <!-- Rollback -->
+  <section class="section" id="rollback">
+    <h2><span class="section-num">13</span>Rollback Procedure</h2>
+    <p>Kubernetes does not support in-place downgrades. The only supported rollback is to restore etcd from a snapshot taken at the previous version, then re-install the previous RKE2 binary.</p>
+
+    <div class="callout crit">
+      <span class="callout-icon">🛑</span>
+      <div class="callout-body">
+        <strong>Rollback destroys all state since the snapshot</strong>
+        Any data written to etcd after the snapshot (new deployments, config changes, PV bindings) will be lost. Ensure your snapshot is fresh and application data lives in PersistentVolumes (not etcd) before proceeding.
+      </div>
+    </div>
+
+<pre><code># 1. Stop the RKE2 server
+systemctl stop rke2-server
+
+# 2. Install the previous version binary (must be available as a local tarball)
+PREV_VERSION="v1.31.9+rke2r1"
+INSTALL_RKE2_ARTIFACT_PATH="/root/rke2-upgrade/${PREV_VERSION}" \
+  INSTALL_RKE2_VERSION="${PREV_VERSION}" \
+  bash /root/rke2-upgrade/install.sh
+
+# 3. Restore etcd from the pre-upgrade snapshot
+SNAPSHOT_NAME="pre-upgrade-202611220522"   # Use your snapshot name
+rke2 server \
+  --cluster-reset \
+  --cluster-reset-restore-path=/var/lib/rancher/rke2/server/db/snapshots/${SNAPSHOT_NAME}
+
+# 4. Start the server (will restart as a single-node cluster)
+systemctl start rke2-server
+
+# 5. Verify restoration
+kubectl get nodes</code></pre>
+  </section>
+
+  <!-- Troubleshooting -->
+  <section class="section" id="troubleshooting">
+    <h2><span class="section-num">14</span>Troubleshooting</h2>
+
+    <h3>Service fails to start after restart</h3>
+<pre><code>journalctl -u rke2-server --since "5 minutes ago" --no-pager \
+  | grep -E "fatal|Error|failed"</code></pre>
+    <p>Common causes and fixes:</p>
+    <ul>
+      <li><strong>CRD registration EOF</strong> — transient; systemd will retry within 30 s. Wait and re-check with <code>systemctl status rke2-server</code>.</li>
+      <li><strong>Disk full</strong> — run <code>df -h /</code>. If over 95%, clean old RKE2 data directories and re-try.</li>
+      <li><strong>etcd fails to start</strong> — check <code>journalctl -u rke2-server | grep etcd</code>. If the etcd snapshot is corrupted, restore from backup.</li>
+    </ul>
+
+    <h3>Node tainted with disk-pressure</h3>
+<pre><code># Check current taint
+kubectl describe node &lt;name&gt; | grep Taint
+
+# Free space (remove old RKE2 data, prune images)
+# Then manually remove stale taint if kubelet hasn't cleared it yet
+kubectl taint node &lt;name&gt; node.kubernetes.io/disk-pressure:NoSchedule-</code></pre>
+
+    <h3>Pods stuck in ImagePullBackOff after upgrade</h3>
+    <p>Custom images may have been evicted from the containerd store during a containerd version upgrade. See <a href="#custom-images">section 11</a> to re-import them.</p>
+<pre><code># Identify which image is missing
+kubectl describe pod &lt;pod-name&gt; -n &lt;namespace&gt; | grep "Failed to pull\|Image:"
+
+# Re-import the image
+ctr --address /run/k3s/containerd/containerd.sock -n k8s.io \
+  images import /path/to/image.tar</code></pre>
+
+    <h3>Java/Quarkus pods in CrashLoopBackOff after upgrade</h3>
+    <p>Java applications (e.g., Nessie) may fail their startup probe during peak post-upgrade resource contention when all pods restart simultaneously. Restart the deployment once the system has settled:</p>
+<pre><code>kubectl rollout restart deployment/&lt;name&gt; -n &lt;namespace&gt;
+kubectl rollout status deployment/&lt;name&gt; -n &lt;namespace&gt;</code></pre>
+
+    <h3>Ranger sidecar failing DNS resolution</h3>
+    <p>Some Ranger sidecar containers try to reach <code>ranger-admin.rangernw</code> — an external hostname that may not be resolvable. If the main Ranger admin pod is healthy, this sidecar failure is expected and does not affect Ranger functionality. Verify with:</p>
+<pre><code>kubectl get pods -n ranger
+# If ranger-apache-ranger-*  shows 1/1 Running, the admin UI is operational.</code></pre>
+  </section>
+
+  <!-- Full Checklist -->
+  <section class="section" id="checklist">
+    <h2><span class="section-num">15</span>Full Upgrade Checklist</h2>
+    <p>Use this checklist for each upgrade run. Print or copy it to your runbook.</p>
+
+    <h3>Before starting</h3>
+    <ul class="check-list">
+      <li>Free disk on <code>/</code> ≥ 20 GB</li>
+      <li>All nodes <code>Ready</code>, no pending evictions</li>
+      <li>etcd snapshot taken within 1 hour</li>
+      <li>Artifact tarballs downloaded and checksums verified</li>
+      <li>Custom image tar archives confirmed on disk</li>
+      <li>Pre-upgrade service state recorded (<code>kubectl get pods -A &gt; pre-upgrade-state.txt</code>)</li>
+    </ul>
+
+    <h3>For each upgrade step (server)</h3>
+    <ul class="check-list">
+      <li>Set <code>TARGET_VERSION</code> to next minor version</li>
+      <li>Installed binary with <code>INSTALL_RKE2_ARTIFACT_PATH</code> (airgap)</li>
+      <li>Verified <code>rke2 --version</code> shows new version</li>
+      <li>Restarted <code>rke2-server</code></li>
+      <li>Waited for <code>systemctl is-active rke2-server</code></li>
+      <li>Verified node <code>Ready</code> at new version via <code>kubectl get nodes</code></li>
+      <li>Canal, CoreDNS, and metrics-server rollout complete</li>
+    </ul>
+
+    <h3>After final upgrade step</h3>
+    <ul class="check-list">
+      <li>Upgraded agent nodes and uncordoned them</li>
+      <li>All application pods back to <code>Running</code></li>
+      <li>All PVCs still <code>Bound</code></li>
+      <li>Custom images confirmed present in containerd store</li>
+      <li>Old RKE2 data directories removed</li>
+      <li>Zombie pods cleaned up</li>
+      <li>No node taints remaining</li>
+      <li>etcd post-upgrade snapshot saved</li>
+    </ul>
+  </section>
+
+  <!-- Artifact List -->
+  <section class="section" id="artifact-list">
+    <h2><span class="section-num">16</span>Artifact List</h2>
+    <p>Complete list of files to download for a full 1.27 → 1.32 upgrade in an airgap environment.</p>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Version</th>
+          <th>Size (approx)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>install.sh</code></td><td>latest</td><td>~20 KB</td></tr>
+        <tr><td><code>rke2.linux-amd64.tar.gz</code></td><td>v1.28.9+rke2r1</td><td>~340 MB</td></tr>
+        <tr><td><code>rke2.linux-amd64.tar.gz</code></td><td>v1.29.9+rke2r1</td><td>~340 MB</td></tr>
+        <tr><td><code>rke2.linux-amd64.tar.gz</code></td><td>v1.30.9+rke2r1</td><td>~340 MB</td></tr>
+        <tr><td><code>rke2.linux-amd64.tar.gz</code></td><td>v1.31.9+rke2r1</td><td>~340 MB</td></tr>
+        <tr><td><code>rke2.linux-amd64.tar.gz</code></td><td>v1.32.13+rke2r1</td><td>~340 MB</td></tr>
+        <tr><td><code>sha256sum-amd64.txt</code></td><td>one per version</td><td>&lt;1 KB each</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Total download size:</strong> ~1.7 GB for all 5 step tarballs.</p>
+    <p>Plus your organization's custom application images (tar archives) — inventory these separately per deployment.</p>
+  </section>
+</main>
+
+<script>
+// Highlight active nav link on scroll
+const sections = document.querySelectorAll('.section[id]');
+const links = document.querySelectorAll('.nav-link');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id));
+    }
+  });
+}, { threshold: 0.1, rootMargin: '-10% 0px -80% 0px' });
+sections.forEach(s => obs.observe(s));
+</script>
